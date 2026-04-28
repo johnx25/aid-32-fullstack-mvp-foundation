@@ -7,6 +7,54 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique
+  displayName String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  profile     Profile?
+  likesSent   Like[]    @relation("likesSent")
+  likesRecv   Like[]    @relation("likesReceived")
+  matchesA    Match[]   @relation("matchUserA")
+  matchesB    Match[]   @relation("matchUserB")
+}
+
+model Profile {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  bio       String
+  city      String
+  interests String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Like {
+  id             Int      @id @default(autoincrement())
+  fromUserId     Int
+  toUserId       Int
+  fromProfileId  Int
+  toProfileId    Int
+  createdAt      DateTime @default(now())
+  fromUser       User     @relation("likesSent", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser         User     @relation("likesReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId])
+}
+
+model Match {
+  id        Int      @id @default(autoincrement())
+  userAId   Int
+  userBId   Int
+  createdAt DateTime @default(now())
+  userA     User     @relation("matchUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB     User     @relation("matchUserB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@unique([userAId, userBId])
+}
+
 model Task {
   id          Int      @id @default(autoincrement())
   title       String
