@@ -5,8 +5,7 @@ This repository provides a practical full-stack MVP baseline:
 - Next.js (App Router, TypeScript)
 - Prisma ORM + SQLite
 - Task API + starter UI
-- Discovery + Like/Match APIs
-- Auth skeleton (header-based user identity, replaceable)
+- Auth + Profile + Discovery + Swipe/Match + Chat APIs
 
 ## Quick start
 
@@ -14,10 +13,10 @@ This repository provides a practical full-stack MVP baseline:
 npm install --include=dev
 npx prisma migrate dev --name init
 npm run prisma:seed
-npm run dev
+npm run dev -- -p 3200
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3200`.
 
 ## Auth skeleton
 
@@ -25,14 +24,22 @@ Current MVP auth is a placeholder for integration speed:
 
 - API endpoints expect `x-user-id` request header.
 - Identity parsing lives in `src/lib/auth.ts`.
+- `POST /api/auth/login` returns the `userId` used for the header-based session simulation.
 - Replace this with your real auth provider/session middleware.
 
 ## APIs
 
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/profile` (requires `x-user-id`)
+- `PATCH /api/profile` (requires `x-user-id`)
 - `GET /api/tasks`
 - `POST /api/tasks`
 - `GET /api/discovery` (requires `x-user-id`)
 - `POST /api/likes` (requires `x-user-id`, body: `{ "targetProfileId": <number> }`)
+- `GET /api/matches` (requires `x-user-id`)
+- `GET /api/chats/:matchId` (requires `x-user-id`)
+- `POST /api/chats/:matchId` (requires `x-user-id`, body: `{ "content": "..." }`)
 
 ## Data model
 
@@ -40,11 +47,5 @@ Current MVP auth is a placeholder for integration speed:
 - `Profile`
 - `Like` (unique per user pair)
 - `Match` (created on reciprocal likes)
+- `Message` (chat messages scoped to a match)
 - `Task`
-
-## Next steps
-
-- Integrate real authentication/session handling
-- Add validation layer (e.g., Zod)
-- Add tests (unit/integration)
-- Switch SQLite to Postgres for deployed environments

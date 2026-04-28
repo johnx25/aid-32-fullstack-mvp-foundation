@@ -18,28 +18,33 @@ model User {
   likesRecv   Like[]    @relation("likesReceived")
   matchesA    Match[]   @relation("matchUserA")
   matchesB    Match[]   @relation("matchUserB")
+  messagesSent Message[] @relation("messageSender")
 }
 
 model Profile {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @unique
-  bio       String
-  city      String
-  interests String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique
+  bio        String
+  city       String
+  interests  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likesGiven Like[]   @relation("likesFromProfile")
+  likesRecv  Like[]   @relation("likesToProfile")
 }
 
 model Like {
-  id             Int      @id @default(autoincrement())
-  fromUserId     Int
-  toUserId       Int
-  fromProfileId  Int
-  toProfileId    Int
-  createdAt      DateTime @default(now())
-  fromUser       User     @relation("likesSent", fields: [fromUserId], references: [id], onDelete: Cascade)
-  toUser         User     @relation("likesReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+  id            Int      @id @default(autoincrement())
+  fromUserId    Int
+  toUserId      Int
+  fromProfileId Int
+  toProfileId   Int
+  createdAt     DateTime @default(now())
+  fromUser      User     @relation("likesSent", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser        User     @relation("likesReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+  fromProfile   Profile  @relation("likesFromProfile", fields: [fromProfileId], references: [id], onDelete: Cascade)
+  toProfile     Profile  @relation("likesToProfile", fields: [toProfileId], references: [id], onDelete: Cascade)
 
   @@unique([fromUserId, toUserId])
 }
@@ -51,8 +56,22 @@ model Match {
   createdAt DateTime @default(now())
   userA     User     @relation("matchUserA", fields: [userAId], references: [id], onDelete: Cascade)
   userB     User     @relation("matchUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  messages  Message[]
 
   @@unique([userAId, userBId])
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  matchId   Int
+  senderId  Int
+  content   String
+  createdAt DateTime @default(now())
+
+  match  Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  sender User  @relation("messageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([matchId, createdAt])
 }
 
 model Task {

@@ -5,7 +5,12 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const currentUserId = await requireCurrentUserId();
-    const body = (await request.json()) as { targetProfileId?: number };
+    let body: { targetProfileId?: number };
+    try {
+      body = (await request.json()) as { targetProfileId?: number };
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
 
     if (!body.targetProfileId || !Number.isInteger(body.targetProfileId)) {
       return NextResponse.json({ error: "targetProfileId is required" }, { status: 400 });
