@@ -3,7 +3,7 @@
 This repository provides a practical full-stack MVP baseline:
 
 - Next.js (App Router, TypeScript)
-- Prisma ORM + SQLite
+- Prisma ORM + PostgreSQL (Supabase-compatible)
 - Task API + starter UI
 - Auth + Profile + Discovery + Swipe/Match + Chat APIs
 
@@ -21,10 +21,34 @@ Open `http://localhost:3200`.
 
 Set `AUTH_TOKEN_SECRET` in `.env` to a random string with at least 32 characters.
 
+## Database setup for local test path (AID-59)
+
+This repo now targets PostgreSQL for local/test and Supabase connectivity.
+
+1. Configure `.env`:
+- `DATABASE_URL` should point to either:
+  - local PostgreSQL (example): `postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public`
+  - Supabase pooled URL (transaction mode)
+- `DIRECT_URL` should be set to a direct PostgreSQL connection URL (for migrations and operations that require direct connectivity).
+
+2. Apply migrations (preferred deterministic path):
+```bash
+npm run prisma:migrate:deploy
+```
+
+3. Seed demo users (optional):
+```bash
+SEED_MODE=demo npm run prisma:seed
+```
+
+If Supabase secrets are unavailable, use any local PostgreSQL instance with the sample `DATABASE_URL` above for reproducible validation.
+
 ## Migration safety
 
-- The full historical migration chain under `prisma/migrations/` is preserved to keep `prisma migrate deploy` compatible with already-migrated environments.
-- Do not delete or rewrite existing migration folders/checksums in place.
+- Legacy SQLite migration history under `prisma/migrations/` is preserved unchanged.
+- PostgreSQL/Supabase test path uses isolated baseline migrations under `prisma/migrations_postgres/` (configured via `prisma.config.ts`).
+- This avoids rewriting previously applied migration semantics/checksums while providing a clean `migrate deploy` path for new PostgreSQL databases.
+- Safe execution path for this repo stage: start with an empty PostgreSQL database, run `npm run prisma:migrate:deploy`, then seed if needed.
 
 ## Beta launch controls
 
