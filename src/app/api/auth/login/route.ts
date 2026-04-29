@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { verifySecret } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
+const MIN_SECRET_LENGTH = 12;
+
 export async function POST(request: Request) {
   let body: { email?: string; secret?: string };
   try {
@@ -14,6 +16,9 @@ export async function POST(request: Request) {
   const secret = body.secret?.trim();
   if (!email || !secret) {
     return NextResponse.json({ error: "email and secret are required" }, { status: 400 });
+  }
+  if (secret.length < MIN_SECRET_LENGTH) {
+    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
   const user = await prisma.user.findUnique({ where: { email }, include: { profile: true } });
@@ -31,10 +36,7 @@ export async function POST(request: Request) {
       displayName: user.displayName,
       profile: user.profile,
       tokenHint: "Use x-user-id and x-user-secret headers for authenticated MVP endpoints",
-      session: {
-        userId: user.id,
-        secret,
-      },
+      session: { userId: user.id },
     },
   });
 }

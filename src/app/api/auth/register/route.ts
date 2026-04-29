@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { createAuthSecret, hashSecret } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
+const MIN_SECRET_LENGTH = 12;
+
 export async function POST(request: Request) {
   let body: { email?: string; displayName?: string; secret?: string; bio?: string; city?: string; interests?: string };
   try {
@@ -27,6 +29,12 @@ export async function POST(request: Request) {
   }
 
   const generatedSecret = secretInput || createAuthSecret();
+  if (generatedSecret.length < MIN_SECRET_LENGTH) {
+    return NextResponse.json(
+      { error: `secret must be at least ${MIN_SECRET_LENGTH} characters` },
+      { status: 400 },
+    );
+  }
 
   const user = await prisma.user.create({
     data: {
