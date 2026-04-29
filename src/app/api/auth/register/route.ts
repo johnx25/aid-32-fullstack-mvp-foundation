@@ -1,12 +1,21 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { fail, ok } from "@/lib/api-response";
+import { createHash, randomBytes } from "crypto";
+
+function hashSecret(secret: string) {
+  return createHash("sha256").update(secret).digest("hex");
+}
+
+function generateSecret() {
+  return randomBytes(18).toString("base64url");
+}
 
 export async function POST(request: Request) {
   let body: { email?: string; displayName?: string; bio?: string; city?: string; interests?: string };
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return fail(400, "BAD_REQUEST", "Invalid JSON body");
   }
 
   const email = body.email?.trim().toLowerCase();
@@ -16,15 +25,20 @@ export async function POST(request: Request) {
   const interests = body.interests?.trim() || "";
 
   if (!email || !displayName) {
-    return NextResponse.json({ error: "email and displayName are required" }, { status: 400 });
+    return fail(400, "BAD_REQUEST", "email and displayName are required");
   }
 
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: { displayName },
-    create: {
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    return fail(409, "CONFLICT", "A user with this email already exists");
+  }
+
+  const secret = generateSecret();
+  const user = await prisma.user.create({
+    data: {
       email,
       displayName,
+      secretHash: hashSecret(secret),
       profile: {
         create: { bio, city, interests },
       },
@@ -32,16 +46,14 @@ export async function POST(request: Request) {
     include: { profile: true },
   });
 
-  if (!user.profile) {
-    const profile = await prisma.profile.create({
-      data: { userId: user.id, bio, city, interests },
-    });
-
-    return NextResponse.json({ data: { userId: user.id, email: user.email, displayName: user.displayName, profile } }, { status: 201 });
-  }
-
-  return NextResponse.json(
-    { data: { userId: user.id, email: user.email, displayName: user.displayName, profile: user.profile } },
-    { status: 201 },
+  return ok(
+    {
+      userId: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      profile: user.profile,
+      secret,
+    },
+    201,
   );
 }
