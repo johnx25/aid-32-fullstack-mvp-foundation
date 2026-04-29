@@ -1,32 +1,51 @@
 # AID-32: Full-Stack MVP Foundation (Next.js + Prisma)
 
-This repository provides a minimal production-ready starting point for a full-stack MVP:
+This repository provides a practical full-stack MVP baseline:
 
 - Next.js (App Router, TypeScript)
-- Prisma ORM
-- SQLite for local development
-- Basic Task model + API + UI wiring
+- Prisma ORM + SQLite
+- Task API + starter UI
+- Auth + Profile + Discovery + Swipe/Match + Chat APIs
 
 ## Quick start
 
 ```bash
-npm install
+npm install --include=dev
 npx prisma migrate dev --name init
-npm run dev
+npm run prisma:seed
+npm run dev -- -p 3200
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3200`.
 
-## Included foundation
+## Auth skeleton
 
-- `src/app/page.tsx`: server-rendered starter UI with form action
-- `src/app/api/tasks/route.ts`: GET/POST task endpoints
-- `src/lib/prisma.ts`: singleton Prisma client setup
-- `prisma/schema.prisma`: initial `Task` model
+Current MVP auth is a placeholder for integration speed:
 
-## Next steps
+- API endpoints expect `x-user-id` request header.
+- Identity parsing lives in `src/lib/auth.ts`.
+- `POST /api/auth/login` returns the `userId` used for the header-based session simulation.
+- Replace this with your real auth provider/session middleware.
 
-- Add authentication (e.g. NextAuth / Clerk)
-- Switch to PostgreSQL for staging/production
-- Add validation layer (Zod) and domain services
-- Add test suite (unit + integration)
+## APIs
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/profile` (requires `x-user-id`)
+- `PATCH /api/profile` (requires `x-user-id`)
+- `GET /api/tasks`
+- `POST /api/tasks`
+- `GET /api/discovery` (requires `x-user-id`)
+- `POST /api/likes` (requires `x-user-id`, body: `{ "targetProfileId": <number> }`)
+- `GET /api/matches` (requires `x-user-id`)
+- `GET /api/chats/:matchId` (requires `x-user-id`)
+- `POST /api/chats/:matchId` (requires `x-user-id`, body: `{ "content": "..." }`)
+
+## Data model
+
+- `User`
+- `Profile`
+- `Like` (unique per user pair)
+- `Match` (created on reciprocal likes)
+- `Message` (chat messages scoped to a match)
+- `Task`
