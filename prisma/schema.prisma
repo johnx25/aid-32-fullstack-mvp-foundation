@@ -3,22 +3,23 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id          Int       @id @default(autoincrement())
-  email       String    @unique
-  secretHash  String
-  displayName String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  profile     Profile?
-  likesSent   Like[]    @relation("likesSent")
-  likesRecv   Like[]    @relation("likesReceived")
-  matchesA    Match[]   @relation("matchUserA")
-  matchesB    Match[]   @relation("matchUserB")
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  secretHash   String
+  displayName  String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  profile      Profile?
+  likesSent    Like[]    @relation("likesSent")
+  likesRecv    Like[]    @relation("likesReceived")
+  matchesA     Match[]   @relation("matchUserA")
+  matchesB     Match[]   @relation("matchUserB")
   messagesSent Message[] @relation("messageSender")
 }
 

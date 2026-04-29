@@ -1,9 +1,9 @@
-# AID-32: Full-Stack MVP Foundation (Next.js + Prisma)
+# AID-32: Full-Stack MVP Foundation (Next.js + Prisma + Supabase)
 
 This repository provides a practical full-stack MVP baseline:
 
 - Next.js (App Router, TypeScript)
-- Prisma ORM + SQLite
+- Prisma ORM + Supabase Postgres
 - Task API + starter UI
 - Auth + Profile + Discovery + Swipe/Match + Chat APIs
 
@@ -11,12 +11,33 @@ This repository provides a practical full-stack MVP baseline:
 
 ```bash
 npm install --include=dev
-npx prisma migrate dev --name init
+cp .env.example .env
+npm run prisma:migrate
 npm run prisma:seed
 npm run dev -- -p 3200
 ```
 
 Open `http://localhost:3200`.
+
+## Supabase setup
+
+1. Create a Supabase project.
+2. Copy both connection strings into `.env`:
+- `DATABASE_URL`: transaction pooler URL (`...pooler.supabase.com:6543...`)
+- `DIRECT_URL`: direct DB URL (`db.<project-ref>.supabase.co:5432`)
+- `AUTH_TOKEN_SECRET`: random secret string with at least 32 characters
+3. Run migrations and seed:
+
+```bash
+npm run prisma:migrate
+npm run prisma:seed
+```
+
+For production deploys, use:
+
+```bash
+npm run prisma:migrate:deploy
+```
 
 ## Beta launch controls
 

@@ -2,11 +2,12 @@
 
 Date: 2026-04-29 (UTC)
 
-## Validation commands
+## Validation commands (Supabase Postgres)
 
-- `DATABASE_URL='file:./prisma/dev.db' npm run lint` -> PASS
-- `DATABASE_URL='file:./prisma/dev.db' npm run build` -> PASS
-- `DATABASE_URL='file:./prisma/dev.db' node scripts/stability-flow-check.mjs` (with app running) -> PASS
+- `DATABASE_URL='<supabase-pooler-url>' DIRECT_URL='<supabase-direct-url>' npm run prisma:migrate` -> PASS
+- `DATABASE_URL='<supabase-pooler-url>' DIRECT_URL='<supabase-direct-url>' npm run lint` -> PASS
+- `DATABASE_URL='<supabase-pooler-url>' DIRECT_URL='<supabase-direct-url>' npm run build` -> PASS
+- `DATABASE_URL='<supabase-pooler-url>' DIRECT_URL='<supabase-direct-url>' AUTH_TOKEN_SECRET='<32+ char secret>' node scripts/stability-flow-check.mjs` (with app running) -> PASS
 
 ## End-to-end API flow (real scenario)
 
@@ -21,8 +22,8 @@ Date: 2026-04-29 (UTC)
 - Login with wrong secret -> `401 UNAUTHORIZED` and failed-login log entry
 - Login with correct secret -> `200`
 
-4. Missing/invalid token edge case
-- `GET /api/profile` without `x-auth-token` -> `401 UNAUTHORIZED`
+4. Missing auth edge case
+- `GET /api/profile` without auth cookie -> `401 UNAUTHORIZED`
 
 5. Discovery and likes
 - `GET /api/discovery` returns other profiles
@@ -44,4 +45,4 @@ Date: 2026-04-29 (UTC)
 ## Known limitations
 
 - Auth is still MVP-style and relies on signed lightweight tokens instead of real session middleware/JWT refresh flow.
-- Secrets are hashed with SHA-256 for MVP stability; no password reset/recovery flow exists yet.
+- Secrets are hashed with scrypt; SHA-256 verification is retained only as a legacy fallback for older stored hashes. No password reset/recovery flow exists yet.
