@@ -21,28 +21,18 @@ function normalizeEmailInput(email: string) {
 function normalizeRegisterInput(input: {
   email: string;
   name: string;
-  password: string;
-  confirmPassword: string;
-  gender: string;
-  dateOfBirth: string;
+  bio: string;
   city: string;
+  interests: string;
   inviteCode: string;
 }) {
-  const gender = input.gender.trim();
-  const dateOfBirth = input.dateOfBirth.trim();
-  const details = [gender ? `Gender: ${gender}` : "", dateOfBirth ? `Date of birth: ${dateOfBirth}` : ""]
-    .filter(Boolean)
-    .join(" | ");
-
   return {
     email: normalizeEmailInput(input.email),
     displayName: input.name.trim(),
-    bio: details,
+    bio: input.bio.trim(),
     city: input.city.trim(),
-    interests: "",
+    interests: input.interests.trim(),
     inviteCode: input.inviteCode.trim(),
-    password: input.password,
-    confirmPassword: input.confirmPassword,
   };
 }
 
@@ -96,11 +86,9 @@ export function RegisterPage() {
   const [registerForm, setRegisterForm] = useState({
     email: "",
     name: "",
-    password: "",
-    confirmPassword: "",
-    gender: "",
-    dateOfBirth: "",
+    bio: "",
     city: "",
+    interests: "",
     inviteCode: "",
   });
 
@@ -149,14 +137,6 @@ export function RegisterPage() {
         setError("Name and email are required.");
         return;
       }
-      if (nextRegisterForm.password.length < 8) {
-        setError("Password must be at least 8 characters.");
-        return;
-      }
-      if (nextRegisterForm.password !== nextRegisterForm.confirmPassword) {
-        setError("Passwords do not match.");
-        return;
-      }
       const res = await apiRequest<RegisterResponseData>("/api/auth/register", {
         method: "POST",
         body: JSON.stringify({
@@ -183,11 +163,13 @@ export function RegisterPage() {
         ...prev,
         email: nextRegisterForm.email,
         name: nextRegisterForm.displayName,
+        bio: nextRegisterForm.bio,
         city: nextRegisterForm.city,
+        interests: nextRegisterForm.interests,
         inviteCode: nextRegisterForm.inviteCode,
       }));
       setRegisterSecret(res.data.secret);
-      setSuccessNote("Account created. Save your one-time secret before leaving this page.");
+      setSuccessNote("Account created. Save your one-time secret. You will use it on the login page.");
     } finally {
       setIsRegistering(false);
     }
@@ -229,53 +211,30 @@ export function RegisterPage() {
           </label>
 
           <label>
-            Password
-            <input
-              type="password"
-              placeholder="At least 8 characters"
-              value={registerForm.password}
-              onChange={(e) => setRegisterForm((prev) => ({ ...prev, password: e.target.value }))}
-              required
-            />
-          </label>
-
-          <label>
-            Confirm password
-            <input
-              type="password"
-              placeholder="Repeat password"
-              value={registerForm.confirmPassword}
-              onChange={(e) => setRegisterForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-              required
-            />
-          </label>
-
-          <label>
-            Gender
-            <input
-              placeholder="e.g. female, male, non-binary"
-              value={registerForm.gender}
-              onChange={(e) => setRegisterForm((prev) => ({ ...prev, gender: e.target.value }))}
-              required
-            />
-          </label>
-
-          <label>
-            Date of birth
-            <input
-              type="date"
-              value={registerForm.dateOfBirth}
-              onChange={(e) => setRegisterForm((prev) => ({ ...prev, dateOfBirth: e.target.value }))}
-              required
-            />
-          </label>
-
-          <label>
             City
             <input
               placeholder="Berlin"
               value={registerForm.city}
               onChange={(e) => setRegisterForm((prev) => ({ ...prev, city: e.target.value }))}
+            />
+          </label>
+
+          <label>
+            Bio
+            <textarea
+              rows={4}
+              placeholder="Tell others what you are into"
+              value={registerForm.bio}
+              onChange={(e) => setRegisterForm((prev) => ({ ...prev, bio: e.target.value }))}
+            />
+          </label>
+
+          <label>
+            Interests
+            <input
+              placeholder="hiking, coffee, live music"
+              value={registerForm.interests}
+              onChange={(e) => setRegisterForm((prev) => ({ ...prev, interests: e.target.value }))}
             />
           </label>
 
