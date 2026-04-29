@@ -8,7 +8,7 @@ export async function GET() {
     const currentUserId = await requireCurrentUserId();
     const profile = await prisma.profile.findUnique({
       where: { userId: currentUserId },
-      include: { user: true },
+      include: { user: { select: { email: true, displayName: true } } },
     });
 
     if (!profile) {
@@ -20,7 +20,7 @@ export async function GET() {
       userId: profile.userId,
       email: profile.user.email,
       displayName: profile.user.displayName,
-      avatarUrl: profile.avatarUrl,
+      avatarUrl: profile.avatarUrl || DEFAULT_AVATAR_URL,
       bio: profile.bio,
       city: profile.city,
       interests: profile.interests,
@@ -44,7 +44,10 @@ export async function PATCH(request: Request) {
       return fail(400, "BAD_REQUEST", "Invalid JSON body");
     }
 
-    const existing = await prisma.profile.findUnique({ where: { userId: currentUserId }, include: { user: true } });
+    const existing = await prisma.profile.findUnique({
+      where: { userId: currentUserId },
+      include: { user: { select: { id: true } } },
+    });
     if (!existing) {
       return fail(404, "NOT_FOUND", "Profile not found");
     }
@@ -76,7 +79,7 @@ export async function PATCH(request: Request) {
         city,
         interests,
       },
-      include: { user: true },
+      include: { user: { select: { email: true, displayName: true } } },
     });
 
     return ok({
