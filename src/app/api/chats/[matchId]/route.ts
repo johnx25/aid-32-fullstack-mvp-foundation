@@ -86,7 +86,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
       return fail(400, "BAD_REQUEST", "content is required");
     }
 
-    const cooldown = checkRateLimit(`chat:send::`, 1, 2000);
+    const cooldown = checkRateLimit(`chat:send:${currentUserId}:${matchId}`, 1, 2000);
     if (!cooldown.allowed) {
       return fail(429, "BAD_REQUEST", "Message cooldown active. Please wait a moment.");
     }

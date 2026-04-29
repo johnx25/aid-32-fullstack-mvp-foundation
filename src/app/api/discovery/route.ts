@@ -26,6 +26,7 @@ export async function GET() {
         profileId: p.id,
         userId: p.userId,
         displayName: p.user.displayName,
+        avatarUrl: p.avatarUrl,
         bio: p.bio,
         city: p.city,
         interests: p.interests,
