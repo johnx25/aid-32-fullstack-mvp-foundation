@@ -12,6 +12,8 @@ type RegisterResponseData = {
   email: string;
   displayName: string;
   secret: string;
+  authTokenExpiresAt: string;
+  redirectTo: string;
 };
 
 function normalizeEmailInput(email: string) {
@@ -20,7 +22,7 @@ function normalizeEmailInput(email: string) {
 
 function normalizeRegisterInput(input: {
   email: string;
-  displayName: string;
+  name: string;
   bio: string;
   city: string;
   interests: string;
@@ -28,7 +30,7 @@ function normalizeRegisterInput(input: {
 }) {
   return {
     email: normalizeEmailInput(input.email),
-    displayName: input.displayName.trim(),
+    displayName: input.name.trim(),
     bio: input.bio.trim(),
     city: input.city.trim(),
     interests: input.interests.trim(),
@@ -39,6 +41,8 @@ function normalizeRegisterInput(input: {
 function isValidRegisterResponseData(data: unknown): data is RegisterResponseData {
   if (!data || typeof data !== "object") return false;
   const value = data as Partial<RegisterResponseData>;
+  const authTokenExpiresAt =
+    typeof value.authTokenExpiresAt === "string" ? Date.parse(value.authTokenExpiresAt) : Number.NaN;
   return (
     typeof value.userId === "number" &&
     Number.isFinite(value.userId) &&
@@ -48,7 +52,10 @@ function isValidRegisterResponseData(data: unknown): data is RegisterResponseDat
     typeof value.displayName === "string" &&
     value.displayName.length > 0 &&
     typeof value.secret === "string" &&
-    value.secret.trim().length > 0
+    value.secret.trim().length > 0 &&
+    Number.isFinite(authTokenExpiresAt) &&
+    typeof value.redirectTo === "string" &&
+    value.redirectTo.length > 0
   );
 }
 
@@ -79,12 +86,13 @@ export function RegisterPage() {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState("");
+  const [sessionCheckError, setSessionCheckError] = useState("");
   const [successNote, setSuccessNote] = useState("");
   const [registerSecret, setRegisterSecret] = useState("");
 
   const [registerForm, setRegisterForm] = useState({
     email: "",
-    displayName: "",
+    name: "",
     bio: "",
     city: "",
     interests: "",
@@ -101,6 +109,11 @@ export function RegisterPage() {
         if (sessionRes.success) {
           router.replace("/");
           return;
+        }
+        setSessionCheckError("No active session found. You can create a new account below.");
+      } catch {
+        if (mounted) {
+          setSessionCheckError("Session check failed. You can still register.");
         }
       } finally {
         if (mounted) {
@@ -127,9 +140,20 @@ export function RegisterPage() {
 
     try {
       const nextRegisterForm = normalizeRegisterInput(registerForm);
+      if (!nextRegisterForm.displayName || !nextRegisterForm.email) {
+        setError("Name and email are required.");
+        return;
+      }
       const res = await apiRequest<RegisterResponseData>("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify(nextRegisterForm),
+        body: JSON.stringify({
+          email: nextRegisterForm.email,
+          displayName: nextRegisterForm.displayName,
+          bio: nextRegisterForm.bio,
+          city: nextRegisterForm.city,
+          interests: nextRegisterForm.interests,
+          inviteCode: nextRegisterForm.inviteCode,
+        }),
       });
 
       if (!res.success) {
@@ -142,9 +166,18 @@ export function RegisterPage() {
         return;
       }
 
-      setRegisterForm(nextRegisterForm);
+      setRegisterForm((prev) => ({
+        ...prev,
+        email: nextRegisterForm.email,
+        name: nextRegisterForm.displayName,
+        bio: nextRegisterForm.bio,
+        city: nextRegisterForm.city,
+        interests: nextRegisterForm.interests,
+        inviteCode: nextRegisterForm.inviteCode,
+      }));
       setRegisterSecret(res.data.secret);
-      setSuccessNote("Account created. Save your one-time secret before leaving this page.");
+      setSuccessNote("Account created. Save your one-time secret. You are signed in and can continue.");
+      router.replace(res.data.redirectTo);
     } finally {
       setIsRegistering(false);
     }
@@ -159,88 +192,83 @@ export function RegisterPage() {
       </section>
 
       <section className={styles.panel}>
-        {isCheckingSession ? (
-          <p className={styles.help}>Checking session...</p>
-        ) : (
-          <>
-            {error ? <p className={styles.error}>{error}</p> : null}
-            {successNote ? <p className={styles.success}>{successNote}</p> : null}
+        <p className={styles.help}>{isCheckingSession ? "Checking session..." : sessionCheckError || "No active session."}</p>
+        {error ? <p className={styles.error}>{error}</p> : null}
+        {successNote ? <p className={styles.success}>{successNote}</p> : null}
 
-            <form onSubmit={handleRegister} className={styles.form}>
-              <label>
-                Email
-                <input
-                  placeholder="you@example.com"
-                  type="email"
-                  value={registerForm.email}
-                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, email: e.target.value }))}
-                  required
-                />
-              </label>
+        <form onSubmit={handleRegister} className={styles.form}>
+          <label>
+            Name
+            <input
+              placeholder="Alex"
+              value={registerForm.name}
+              onChange={(e) => setRegisterForm((prev) => ({ ...prev, name: e.target.value }))}
+              required
+            />
+          </label>
 
-              <label>
-                Display name
-                <input
-                  placeholder="Alex"
-                  value={registerForm.displayName}
-                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, displayName: e.target.value }))}
-                  required
-                />
-              </label>
+          <label>
+            Email
+            <input
+              placeholder="you@example.com"
+              type="email"
+              value={registerForm.email}
+              onChange={(e) => setRegisterForm((prev) => ({ ...prev, email: e.target.value }))}
+              required
+            />
+          </label>
 
-              <label>
-                Invite code
-                <input
-                  placeholder="Optional unless beta mode is on"
-                  value={registerForm.inviteCode}
-                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, inviteCode: e.target.value }))}
-                />
-              </label>
+          <label>
+            City
+            <input
+              placeholder="Berlin"
+              value={registerForm.city}
+              onChange={(e) => setRegisterForm((prev) => ({ ...prev, city: e.target.value }))}
+            />
+          </label>
 
-              <label>
-                City
-                <input
-                  placeholder="Berlin"
-                  value={registerForm.city}
-                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, city: e.target.value }))}
-                />
-              </label>
+          <label>
+            Bio
+            <textarea
+              rows={4}
+              placeholder="Tell others what you are into"
+              value={registerForm.bio}
+              onChange={(e) => setRegisterForm((prev) => ({ ...prev, bio: e.target.value }))}
+            />
+          </label>
 
-              <label>
-                Bio
-                <textarea
-                  rows={4}
-                  placeholder="Tell others what you are into"
-                  value={registerForm.bio}
-                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, bio: e.target.value }))}
-                />
-              </label>
+          <label>
+            Interests
+            <input
+              placeholder="hiking, coffee, live music"
+              value={registerForm.interests}
+              onChange={(e) => setRegisterForm((prev) => ({ ...prev, interests: e.target.value }))}
+            />
+          </label>
 
-              <label>
-                Interests
-                <input
-                  placeholder="hiking, coffee, live music"
-                  value={registerForm.interests}
-                  onChange={(e) => setRegisterForm((prev) => ({ ...prev, interests: e.target.value }))}
-                />
-              </label>
+          <label>
+            Invite code
+            <input
+              placeholder="Optional unless beta mode is on"
+              value={registerForm.inviteCode}
+              onChange={(e) => setRegisterForm((prev) => ({ ...prev, inviteCode: e.target.value }))}
+            />
+          </label>
 
-              <button type="submit" disabled={isRegistering}>
-                {isRegistering ? "Creating account..." : "Create account"}
-              </button>
-            </form>
+          <button type="submit" disabled={isRegistering}>
+            {isRegistering ? "Creating account..." : "Create account"}
+          </button>
+        </form>
 
-            {registerSecret ? (
-              <p className={styles.secret}>
-                One-time secret: <code>{registerSecret}</code>
-              </p>
-            ) : null}
+        {registerSecret ? (
+          <p className={styles.secret}>
+            One-time secret: <code>{registerSecret}</code>
+          </p>
+        ) : null}
 
-            <p className={styles.switch}>
-              Already have an account? <Link href="/login">Go to login</Link>
-            </p>
-          </>
-        )}
+        <p className={styles.switch}>
+          Already have an account? <Link href="/login">Go to login</Link>
+        </p>
       </section>
     </main>
   );
