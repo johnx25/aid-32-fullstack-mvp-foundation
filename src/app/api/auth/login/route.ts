@@ -1,42 +1,64 @@
 import { prisma } from "@/lib/prisma";
-import { verifySecret } from "@/lib/auth";
-import { NextResponse } from "next/server";
-
-const MIN_SECRET_LENGTH = 12;
+import { fail, ok } from "@/lib/api-response";
+import { AUTH_TOKEN_COOKIE_NAME, createUserAuthToken, getAuthCookieOptions } from "@/lib/auth";
+import { normalizeEmail, isValidEmail } from "@/lib/validation";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { log } from "@/lib/logger";
+import { hashSecret, isLegacySecretHash, verifySecret } from "@/lib/secret-hash";
 
 export async function POST(request: Request) {
-  let body: { email?: string; secret?: string };
   try {
-    body = (await request.json()) as { email?: string; secret?: string };
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
+    let body: { email?: string; secret?: string };
+    try {
+      body = (await request.json()) as { email?: string; secret?: string };
+    } catch {
+      return fail(400, "BAD_REQUEST", "Invalid JSON body");
+    }
 
-  const email = body.email?.trim().toLowerCase();
-  const secret = body.secret?.trim();
-  if (!email || !secret) {
-    return NextResponse.json({ error: "email and secret are required" }, { status: 400 });
-  }
-  if (secret.length < MIN_SECRET_LENGTH) {
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-  }
+    const email = body.email ? normalizeEmail(body.email) : "";
+    const secret = body.secret?.trim();
+    if (!email || !secret || !isValidEmail(email) || secret.length < 8 || secret.length > 128) {
+      return fail(400, "BAD_REQUEST", "email and secret are required");
+    }
 
-  const user = await prisma.user.findUnique({ where: { email }, include: { profile: true } });
-  if (!user) {
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-  }
-  if (!verifySecret(secret, user.authSecretHash)) {
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-  }
+    const limit = checkRateLimit(`auth:login:${email}`, 5, 5 * 60 * 1000);
+    if (!limit.allowed) {
+      return fail(429, "TOO_MANY_REQUESTS", "Too many login attempts. Please retry later.");
+    }
 
-  return NextResponse.json({
-    data: {
+    const user = await prisma.user.findUnique({ where: { email }, include: { profile: true } });
+    if (!user || !verifySecret(secret, user.secretHash)) {
+      log("warn", "auth.login.failed", { email });
+      return fail(401, "UNAUTHORIZED", "Invalid credentials");
+    }
+    if (isLegacySecretHash(user.secretHash)) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { secretHash: hashSecret(secret) },
+      });
+    }
+
+    const auth = createUserAuthToken(user.id);
+    log("info", "auth.login.success", { userId: user.id, email: user.email });
+
+    const response = ok({
       userId: user.id,
       email: user.email,
       displayName: user.displayName,
       profile: user.profile,
-      tokenHint: "Use x-user-id and x-user-secret headers for authenticated MVP endpoints",
-      session: { userId: user.id },
-    },
-  });
+      authTokenExpiresAt: auth.expiresAt,
+    });
+    response.cookies.set(AUTH_TOKEN_COOKIE_NAME, auth.token, getAuthCookieOptions());
+    return response;
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_CONFIG_MISSING") {
+      log("error", "auth.login.config_missing", {});
+      return fail(500, "INTERNAL_ERROR", "Auth configuration is missing");
+    }
+
+    log("error", "auth.login.error", {
+      reason: error instanceof Error ? error.message : "unknown",
+    });
+    return fail(500, "INTERNAL_ERROR", "Internal server error");
+  }
 }

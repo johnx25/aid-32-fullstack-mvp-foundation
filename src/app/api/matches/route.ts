@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUserId } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { fail, ok } from "@/lib/api-response";
 
 export async function GET() {
   try {
@@ -17,8 +17,8 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({
-      data: matches.map((m) => {
+    return ok(
+      matches.map((m) => {
         const other = m.userAId === currentUserId ? m.userB : m.userA;
         return {
           matchId: m.id,
@@ -35,12 +35,12 @@ export async function GET() {
             : null,
         };
       }),
-    });
+    );
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return fail(401, "UNAUTHORIZED", "Unauthorized");
     }
 
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return fail(500, "INTERNAL_ERROR", "Internal server error");
   }
 }

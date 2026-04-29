@@ -1,12 +1,24 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { fail, ok } from "@/lib/api-response";
+import { sanitizeUserText } from "@/lib/validation";
+import { log } from "@/lib/logger";
+import { requireCurrentUserId } from "@/lib/auth";
 
 export async function GET() {
-  const tasks = await prisma.task.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  try {
+    await requireCurrentUserId();
+    const tasks = await prisma.task.findMany({
+      orderBy: { createdAt: "desc" },
+    });
 
-  return NextResponse.json({ data: tasks });
+    return ok(tasks);
+  } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return fail(401, "UNAUTHORIZED", "Unauthorized");
+    }
+    log("error", "tasks.list.error", { reason: error instanceof Error ? error.message : "unknown" });
+    return fail(500, "INTERNAL_ERROR", "Internal server error");
+  }
 }
 
 export async function POST(request: Request) {
@@ -17,23 +29,29 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return fail(400, "BAD_REQUEST", "Invalid JSON body");
   }
 
-  const title = body.title?.trim();
+  const title = body.title ? sanitizeUserText(body.title, 160) : "";
   if (!title) {
-    return NextResponse.json(
-      { error: "Title is required" },
-      { status: 400 },
-    );
+    return fail(400, "BAD_REQUEST", "Title is required");
   }
 
-  const task = await prisma.task.create({
-    data: {
-      title,
-      description: body.description?.trim() || null,
-    },
-  });
+  try {
+    await requireCurrentUserId();
+    const task = await prisma.task.create({
+      data: {
+        title,
+        description: body.description ? sanitizeUserText(body.description, 2000) : null,
+      },
+    });
 
-  return NextResponse.json({ data: task }, { status: 201 });
+    return ok(task, 201);
+  } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return fail(401, "UNAUTHORIZED", "Unauthorized");
+    }
+    log("error", "tasks.create.error", { reason: error instanceof Error ? error.message : "unknown" });
+    return fail(500, "INTERNAL_ERROR", "Internal server error");
+  }
 }

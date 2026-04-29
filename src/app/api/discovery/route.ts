@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUserId } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { fail, ok } from "@/lib/api-response";
+import { log } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -18,23 +19,25 @@ export async function GET() {
       select: { toUserId: true },
     });
     const likedUserIds = new Set(sentLikes.map((l) => l.toUserId));
+    log("info", "discovery.viewed", { currentUserId, resultCount: profiles.length });
 
-    return NextResponse.json({
-      data: profiles.map((p) => ({
+    return ok(
+      profiles.map((p) => ({
         profileId: p.id,
         userId: p.userId,
         displayName: p.user.displayName,
+        avatarUrl: p.avatarUrl,
         bio: p.bio,
         city: p.city,
         interests: p.interests,
         likedByCurrentUser: likedUserIds.has(p.userId),
       })),
-    });
+    );
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return fail(401, "UNAUTHORIZED", "Unauthorized");
     }
 
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return fail(500, "INTERNAL_ERROR", "Internal server error");
   }
 }

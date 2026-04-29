@@ -11,42 +11,70 @@ This repository provides a practical full-stack MVP baseline:
 
 ```bash
 npm install --include=dev
-npx prisma migrate dev --name init
+cp .env.example .env
+npm run prisma:migrate
 npm run prisma:seed
 npm run dev -- -p 3200
 ```
 
 Open `http://localhost:3200`.
 
+Set `AUTH_TOKEN_SECRET` in `.env` to a random string with at least 32 characters.
+
+## Migration safety
+
+- The full historical migration chain under `prisma/migrations/` is preserved to keep `prisma migrate deploy` compatible with already-migrated environments.
+- Do not delete or rewrite existing migration folders/checksums in place.
+
+## Beta launch controls
+
+Use these env vars in `.env`:
+
+- `BETA_MODE=true|false`
+- `BETA_INVITE_CODES=code1,code2`
+- `SEED_MODE=real|demo` (`real` skips fake users, `demo` loads test users)
+
 ## Auth skeleton
 
-Current MVP auth is a placeholder for integration speed:
+Current MVP auth uses registration secrets with hashed storage:
 
-- API endpoints expect `x-user-id` and `x-user-secret` request headers.
+- `POST /api/auth/register` returns a one-time `secret` for the created user.
+- `POST /api/auth/login` requires `email` + `secret` and sets a signed auth token in an HttpOnly cookie.
+- `POST /api/auth/logout` clears the auth cookie.
+- `GET /api/auth/session` reads the current authenticated session from cookie.
+- Protected endpoints require a valid auth cookie (legacy `x-auth-token` header fallback is still accepted).
 - Identity parsing lives in `src/lib/auth.ts`.
-- `POST /api/auth/register` creates a user and returns a bootstrap secret once.
-- `POST /api/auth/login` requires `email` + `secret` and returns session header values.
 - Replace this with your real auth provider/session middleware.
 
 ## APIs
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
-- `GET /api/profile` (requires `x-user-id` + `x-user-secret`)
-- `PATCH /api/profile` (requires `x-user-id` + `x-user-secret`)
-- `GET /api/tasks`
-- `POST /api/tasks`
-- `GET /api/discovery` (requires `x-user-id` + `x-user-secret`)
-- `POST /api/likes` (requires `x-user-id` + `x-user-secret`, body: `{ "targetProfileId": <number> }`)
-- `GET /api/matches` (requires `x-user-id` + `x-user-secret`)
-- `GET /api/chats/:matchId` (requires `x-user-id` + `x-user-secret`)
-- `POST /api/chats/:matchId` (requires `x-user-id` + `x-user-secret`, body: `{ "content": "..." }`)
+- `POST /api/auth/logout`
+- `GET /api/auth/session`
+- `GET /api/profile` (requires auth)
+- `PATCH /api/profile` (requires auth)
+- `GET /api/tasks` (requires auth)
+- `POST /api/tasks` (requires auth)
+- `GET /api/discovery` (requires auth)
+- `POST /api/likes` (requires auth, body: `{ "targetProfileId": <number> }`)
+- `GET /api/matches` (requires auth)
+- `GET /api/chats/:matchId` (requires auth)
+- `POST /api/chats/:matchId` (requires auth, body: `{ "content": "..." }`)
 
 ## Data model
 
 - `User`
-- `Profile`
+- `Profile` (with `avatarUrl`)
 - `Like` (unique per user pair)
 - `Match` (created on reciprocal likes)
 - `Message` (chat messages scoped to a match)
 - `Task`
+
+## Manual beta test checklist
+
+- New user can sign up
+- User is guided to complete profile
+- User cannot like others with incomplete profile
+- Matching works
+- Chat works with empty-message rejection and cooldown

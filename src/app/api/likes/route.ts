@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUserId } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { fail, ok } from "@/lib/api-response";
+import { hasMinimumProfileQuality, validatePositiveInt } from "@/lib/validation";
+import { log } from "@/lib/logger";
 
 export async function POST(request: Request) {
   try {
@@ -9,11 +11,11 @@ export async function POST(request: Request) {
     try {
       body = (await request.json()) as { targetProfileId?: number };
     } catch {
-      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+      return fail(400, "BAD_REQUEST", "Invalid JSON body");
     }
 
-    if (!body.targetProfileId || !Number.isInteger(body.targetProfileId)) {
-      return NextResponse.json({ error: "targetProfileId is required" }, { status: 400 });
+    if (!validatePositiveInt(body.targetProfileId)) {
+      return fail(400, "BAD_REQUEST", "targetProfileId is required");
     }
 
     const targetProfile = await prisma.profile.findUnique({
@@ -22,16 +24,20 @@ export async function POST(request: Request) {
     });
 
     if (!targetProfile) {
-      return NextResponse.json({ error: "Target profile not found" }, { status: 404 });
+      return fail(404, "NOT_FOUND", "Target profile not found");
     }
 
     if (targetProfile.userId === currentUserId) {
-      return NextResponse.json({ error: "You cannot like yourself" }, { status: 400 });
+      return fail(400, "BAD_REQUEST", "You cannot like yourself");
     }
 
     const ownProfile = await prisma.profile.findUnique({ where: { userId: currentUserId } });
     if (!ownProfile) {
-      return NextResponse.json({ error: "Current user profile not found" }, { status: 404 });
+      return fail(404, "NOT_FOUND", "Current user profile not found");
+    }
+
+    if (!hasMinimumProfileQuality(ownProfile)) {
+      return fail(403, "FORBIDDEN", "Complete your profile first (avatar + bio) before liking others.");
     }
 
     await prisma.like.upsert({
@@ -55,22 +61,25 @@ export async function POST(request: Request) {
     });
 
     let isMatch = false;
+    let matchId: number | null = null;
     if (reciprocalLike) {
       const [userAId, userBId] = [currentUserId, targetProfile.userId].sort((a, b) => a - b);
-      await prisma.match.upsert({
+      const match = await prisma.match.upsert({
         where: { userAId_userBId: { userAId, userBId } },
         update: {},
         create: { userAId, userBId },
       });
       isMatch = true;
+      matchId = match.id;
+      log("info", "match.created_or_found", { userAId, userBId, matchId: match.id });
     }
 
-    return NextResponse.json({ data: { likedUserId: targetProfile.userId, isMatch } }, { status: 201 });
+    return ok({ likedUserId: targetProfile.userId, isMatch, matchId }, 201);
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return fail(401, "UNAUTHORIZED", "Unauthorized");
     }
 
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return fail(500, "INTERNAL_ERROR", "Internal server error");
   }
 }

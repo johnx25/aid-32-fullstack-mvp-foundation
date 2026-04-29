@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUserId } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { fail, ok } from "@/lib/api-response";
+import { Prisma } from "@prisma/client";
+import { sanitizeUserText } from "@/lib/validation";
+import { log } from "@/lib/logger";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 function parseMatchId(value: string): number | null {
   const id = Number(value);
@@ -13,10 +17,10 @@ function parseMatchId(value: string): number | null {
 async function verifyMembership(matchId: number, userId: number) {
   const match = await prisma.match.findUnique({ where: { id: matchId } });
   if (!match) {
-    return { ok: false as const, status: 404, error: "Match not found" };
+    return { ok: false as const, status: 404, code: "NOT_FOUND" as const, message: "Match not found" };
   }
   if (match.userAId !== userId && match.userBId !== userId) {
-    return { ok: false as const, status: 403, error: "Forbidden" };
+    return { ok: false as const, status: 403, code: "FORBIDDEN" as const, message: "Forbidden" };
   }
   return { ok: true as const };
 }
@@ -27,12 +31,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mat
     const { matchId: rawMatchId } = await params;
     const matchId = parseMatchId(rawMatchId);
     if (!matchId) {
-      return NextResponse.json({ error: "Invalid matchId" }, { status: 400 });
+      return fail(400, "BAD_REQUEST", "Invalid matchId");
     }
 
     const membership = await verifyMembership(matchId, currentUserId);
     if (!membership.ok) {
-      return NextResponse.json({ error: membership.error }, { status: membership.status });
+      return fail(membership.status, membership.code, membership.message);
     }
 
     const messages = await prisma.message.findMany({
@@ -42,8 +46,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mat
       take: 200,
     });
 
-    return NextResponse.json({
-      data: messages.map((m) => ({
+    return ok(
+      messages.map((m) => ({
         messageId: m.id,
         matchId: m.matchId,
         senderId: m.senderId,
@@ -51,13 +55,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mat
         content: m.content,
         createdAt: m.createdAt,
       })),
-    });
+    );
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return fail(401, "UNAUTHORIZED", "Unauthorized");
     }
 
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return fail(500, "INTERNAL_ERROR", "Internal server error");
   }
 }
 
@@ -67,53 +71,72 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
     const { matchId: rawMatchId } = await params;
     const matchId = parseMatchId(rawMatchId);
     if (!matchId) {
-      return NextResponse.json({ error: "Invalid matchId" }, { status: 400 });
-    }
-
-    const membership = await verifyMembership(matchId, currentUserId);
-    if (!membership.ok) {
-      return NextResponse.json({ error: membership.error }, { status: membership.status });
+      return fail(400, "BAD_REQUEST", "Invalid matchId");
     }
 
     let body: { content?: string };
     try {
       body = (await request.json()) as { content?: string };
     } catch {
-      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+      return fail(400, "BAD_REQUEST", "Invalid JSON body");
     }
 
-    const content = body.content?.trim();
+    const content = body.content ? sanitizeUserText(body.content, 500) : "";
     if (!content) {
-      return NextResponse.json({ error: "content is required" }, { status: 400 });
+      return fail(400, "BAD_REQUEST", "content is required");
     }
 
-    const message = await prisma.message.create({
-      data: {
-        matchId,
-        senderId: currentUserId,
-        content,
-      },
-      include: { sender: true },
+    const cooldown = checkRateLimit(`chat:send:${currentUserId}:${matchId}`, 1, 2000);
+    if (!cooldown.allowed) {
+      return fail(429, "TOO_MANY_REQUESTS", "Message cooldown active. Please wait a moment.");
+    }
+
+    const message = await prisma.$transaction(async (tx) => {
+      const match = await tx.match.findUnique({ where: { id: matchId } });
+      if (!match) {
+        throw new Error("MATCH_NOT_FOUND");
+      }
+      if (match.userAId !== currentUserId && match.userBId !== currentUserId) {
+        throw new Error("FORBIDDEN_MATCH");
+      }
+
+      return tx.message.create({
+        data: {
+          matchId,
+          senderId: currentUserId,
+          content,
+        },
+        include: { sender: true },
+      });
     });
 
-    return NextResponse.json(
+    log("info", "chat.message.created", { matchId, currentUserId, messageId: message.id });
+
+    return ok(
       {
-        data: {
-          messageId: message.id,
-          matchId: message.matchId,
-          senderId: message.senderId,
-          senderDisplayName: message.sender.displayName,
-          content: message.content,
-          createdAt: message.createdAt,
-        },
+        messageId: message.id,
+        matchId: message.matchId,
+        senderId: message.senderId,
+        senderDisplayName: message.sender.displayName,
+        content: message.content,
+        createdAt: message.createdAt,
       },
-      { status: 201 },
+      201,
     );
   } catch (error) {
+    if (error instanceof Error && error.message === "MATCH_NOT_FOUND") {
+      return fail(404, "NOT_FOUND", "Match not found");
+    }
+    if (error instanceof Error && error.message === "FORBIDDEN_MATCH") {
+      return fail(403, "FORBIDDEN", "Forbidden");
+    }
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return fail(401, "UNAUTHORIZED", "Unauthorized");
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      return fail(404, "NOT_FOUND", "Match not found");
     }
 
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return fail(500, "INTERNAL_ERROR", "Internal server error");
   }
 }

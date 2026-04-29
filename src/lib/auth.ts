@@ -1,52 +1,112 @@
 import { headers } from "next/headers";
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
+import { createHmac, timingSafeEqual } from "crypto";
 
-const KEY_LENGTH = 64;
+export const AUTH_TOKEN_COOKIE_NAME = "aid32_auth_token";
+export const AUTH_TOKEN_TTL_SECONDS = 60 * 60 * 12;
 
-export function createAuthSecret(): string {
-  return randomBytes(24).toString("hex");
+function getAuthTokenSigningKey() {
+  const configured = process.env.AUTH_TOKEN_SECRET || process.env.NEXTAUTH_SECRET;
+  if (configured && configured.trim().length >= 32) {
+    return configured;
+  }
+  console.error("[auth] AUTH_TOKEN_SECRET (or NEXTAUTH_SECRET) must be set and at least 32 chars");
+  throw new Error("AUTH_CONFIG_MISSING");
 }
 
-export function hashSecret(secret: string): string {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(secret, salt, KEY_LENGTH).toString("hex");
-  return `${salt}:${hash}`;
+function createAuthTokenSignature(payload: string) {
+  return createHmac("sha256", getAuthTokenSigningKey()).update(payload).digest("hex");
 }
 
-export function verifySecret(secret: string, stored: string): boolean {
-  const [salt, hexHash] = stored.split(":");
-  if (!salt || !hexHash) {
-    return false;
+export function createUserAuthToken(userId: number) {
+  const expiresAt = Math.floor(Date.now() / 1000) + AUTH_TOKEN_TTL_SECONDS;
+  const payload = `${userId}.${expiresAt}`;
+  const signature = createAuthTokenSignature(payload);
+  return {
+    token: `${payload}.${signature}`,
+    expiresAt,
+  };
+}
+
+export function getAuthCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: AUTH_TOKEN_TTL_SECONDS,
+  };
+}
+
+function verifyUserAuthToken(token: string): number | null {
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    return null;
   }
 
-  const currentHash = scryptSync(secret, salt, KEY_LENGTH);
-  const storedHash = Buffer.from(hexHash, "hex");
-  if (storedHash.length !== currentHash.length) {
-    return false;
+  const [rawUserId, rawExpiresAt, signature] = parts;
+  if (!rawUserId || !rawExpiresAt || !signature) {
+    return null;
   }
-  return timingSafeEqual(storedHash, currentHash);
+
+  const userId = Number(rawUserId);
+  const expiresAt = Number(rawExpiresAt);
+  if (!Number.isInteger(userId) || userId <= 0 || !Number.isInteger(expiresAt)) {
+    return null;
+  }
+  if (expiresAt < Math.floor(Date.now() / 1000)) {
+    return null;
+  }
+
+  const payload = `${userId}.${expiresAt}`;
+  const expectedSignature = createAuthTokenSignature(payload);
+  const expectedBuffer = Buffer.from(expectedSignature);
+  const actualBuffer = Buffer.from(signature);
+  if (expectedBuffer.length !== actualBuffer.length || !timingSafeEqual(expectedBuffer, actualBuffer)) {
+    return null;
+  }
+
+  return userId;
 }
 
 // Auth skeleton: replace header-based identity with a real session provider.
 export async function requireCurrentUserId(): Promise<number> {
-  const requestHeaders = await headers();
-  const userIdHeader = requestHeaders.get("x-user-id");
-  const userSecretHeader = requestHeaders.get("x-user-secret");
-  if (!userIdHeader || !userSecretHeader) {
+  const requestCookies = await cookies();
+  const cookieToken = requestCookies.get(AUTH_TOKEN_COOKIE_NAME)?.value;
+  if (cookieToken) {
+    const userIdFromCookie = verifyUserAuthToken(cookieToken);
+    if (userIdFromCookie) {
+      return userIdFromCookie;
+    }
+    console.warn("[auth] Invalid auth cookie");
     throw new Error("UNAUTHORIZED");
+  }
+
+  const requestHeaders = await headers();
+  const authToken = requestHeaders.get("x-auth-token");
+  if (!authToken) {
+    console.warn("[auth] Missing x-auth-token header");
+    throw new Error("UNAUTHORIZED");
+  }
+
+  const userIdFromToken = verifyUserAuthToken(authToken);
+  if (!userIdFromToken) {
+    console.warn("[auth] Invalid x-auth-token header");
+    throw new Error("UNAUTHORIZED");
+  }
+
+  const userIdHeader = requestHeaders.get("x-user-id");
+  if (!userIdHeader) {
+    return userIdFromToken;
   }
 
   const userId = Number(userIdHeader);
   if (!Number.isInteger(userId) || userId <= 0) {
+    console.warn("[auth] Invalid x-user-id header");
     throw new Error("UNAUTHORIZED");
   }
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { authSecretHash: true },
-  });
-  if (!user || !verifySecret(userSecretHeader, user.authSecretHash)) {
+  if (userId !== userIdFromToken) {
+    console.warn("[auth] x-user-id does not match x-auth-token");
     throw new Error("UNAUTHORIZED");
   }
 

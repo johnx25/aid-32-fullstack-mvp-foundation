@@ -1,0 +1,198 @@
+.page {
+  min-height: 100vh;
+  padding: 1.5rem;
+  background: radial-gradient(circle at top left, #f6fbff, #f9f6ff 40%, #ffffff 75%);
+  color: #142033;
+}
+
+.header {
+  max-width: 1100px;
+  margin: 0 auto 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header h1 {
+  font-size: clamp(1.5rem, 2.8vw, 2rem);
+}
+
+.header p {
+  color: #51607b;
+  font-size: 0.95rem;
+}
+
+.authGrid,
+.appGrid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  gap: 1rem;
+}
+
+.authGrid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.appGrid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #dfe7f4;
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(20, 32, 51, 0.07);
+}
+
+.card h2 {
+  margin-bottom: 0.75rem;
+}
+
+.card form,
+.card {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.card input,
+.card textarea,
+.card button {
+  width: 100%;
+  font: inherit;
+  border-radius: 10px;
+}
+
+.card input,
+.card textarea {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #c8d3e7;
+  background: #fcfdff;
+}
+
+.primaryButton,
+.secondaryButton {
+  padding: 0.65rem 0.9rem;
+  border: 0;
+  cursor: pointer;
+}
+
+.primaryButton {
+  background: #1565d8;
+  color: #fff;
+}
+
+.primaryButton:disabled {
+  background: #7ca8e6;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  background: #eef2fb;
+  color: #20304d;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.row > * {
+  flex: 1;
+}
+
+.profileList,
+.matchList,
+.messages {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.profileCard {
+  border: 1px solid #dce5f5;
+  border-radius: 10px;
+  padding: 0.7rem;
+  background: #fbfdff;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.profileCard h3 {
+  font-size: 1rem;
+}
+
+.matchItem {
+  text-align: left;
+  border: 1px solid #dce5f5;
+  background: #fff;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  cursor: pointer;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.matchItemActive {
+  border-color: #1565d8;
+  background: #eff6ff;
+}
+
+.message {
+  background: #f1f5ff;
+  border-radius: 10px;
+  padding: 0.6rem;
+}
+
+.messageOwn {
+  background: #dceaff;
+}
+
+.message span {
+  font-size: 0.78rem;
+  color: #4d5d7c;
+}
+
+.error,
+.success {
+  max-width: 1100px;
+  margin: 0 auto 1rem;
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+}
+
+.error {
+  background: #fdecec;
+  color: #8a2134;
+  border: 1px solid #f5c4ce;
+}
+
+.success {
+  background: #ebf9ef;
+  color: #1f6b31;
+  border: 1px solid #b6e4c3;
+}
+
+.empty,
+.muted,
+.help,
+.secret {
+  font-size: 0.9rem;
+  color: #52617d;
+}
+
+@media (max-width: 780px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .row {
+    flex-direction: column;
+  }
+}
