@@ -1,0 +1,74 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  padding: 2rem 1rem;
+}
+
+.panel {
+  width: min(980px, 100%);
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 40px -28px rgba(15, 23, 42, 0.45);
+}
+
+.grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.card input,
+.card textarea,
+.card button {
+  font: inherit;
+  border-radius: 10px;
+}
+
+.card input,
+.card textarea {
+  border: 1px solid #d1d5db;
+  padding: 0.6rem 0.7rem;
+}
+
+.card button {
+  border: 0;
+  background: #111827;
+  color: #ffffff;
+  padding: 0.6rem 0.7rem;
+  cursor: pointer;
+}
+
+.card button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.help {
+  color: #4b5563;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+.success {
+  color: #166534;
+}
+
+.secret {
+  overflow-wrap: anywhere;
+  font-size: 0.95rem;
+}
