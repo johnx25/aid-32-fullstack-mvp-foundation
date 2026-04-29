@@ -1,41 +1,47 @@
-# Test Protocol (AID-34 Follow-up)
+# Test Protocol (AID-42 Stability)
 
-Date: 2026-04-28 (UTC)
+Date: 2026-04-29 (UTC)
 
 ## Validation commands
 
-- `npm run lint` -> PASS
-- `npm run build` -> PASS
+- `DATABASE_URL='file:./prisma/dev.db' npm run lint` -> PASS
+- `DATABASE_URL='file:./prisma/dev.db' npm run build` -> PASS
+- `DATABASE_URL='file:./prisma/dev.db' node scripts/stability-flow-check.mjs` (with app running) -> PASS
 
-## End-to-end API flow (local)
+## End-to-end API flow (real scenario)
 
-Tested in one shell session with app startup + curl flow:
+1. Register and store secret
+- `POST /api/auth/register` for two new users -> `201`
+- Both responses return one-time `secret` values
 
-1. Register
-- `POST /api/auth/register` for `dave@example.com` -> created `userId=4`, `profileId=4`
-- `POST /api/auth/register` for `erin@example.com` -> created `userId=5`, `profileId=5`
+2. Duplicate registration edge case
+- Register same email again -> `409 CONFLICT`
 
-2. Login
-- `POST /api/auth/login` for `dave@example.com` -> returned `userId=4`
+3. Login and failed-login edge case
+- Login with wrong secret -> `401 UNAUTHORIZED` and failed-login log entry
+- Login with correct secret -> `200`
 
-3. Profile
-- `GET /api/profile` with `x-user-id: 4` -> PASS
-- `PATCH /api/profile` with `x-user-id: 4` (city/interests update) -> PASS
+4. Missing/invalid token edge case
+- `GET /api/profile` without `x-auth-token` -> `401 UNAUTHORIZED`
 
-4. Discovery
-- `GET /api/discovery` with `x-user-id: 4` -> Erin + seeded profiles returned
+5. Discovery and likes
+- `GET /api/discovery` returns other profiles
+- Like target profile -> `201`
+- Reciprocal like -> `201` with `isMatch: true` and match log entry
 
-5. Swipe + Match
-- Dave likes Erin: `POST /api/likes` -> `{ isMatch: false }`
-- Erin likes Dave back: `POST /api/likes` -> `{ isMatch: true }`
-- `GET /api/matches` for Dave -> returned `matchId=1`
+6. Match and chat
+- `GET /api/matches` returns created match
+- `POST /api/chats/:matchId` sends message -> `201` with chat log entry
+- `GET /api/chats/:matchId` reads messages -> `200`
 
-6. Chat
-- `POST /api/chats/1` as Dave -> message created
-- `POST /api/chats/1` as Erin -> message created
-- `GET /api/chats/1` as Dave -> both messages returned in order
+## Manual checklist
 
-## Notes
+- [x] User can register
+- [x] User can log in
+- [x] Matching works
+- [x] Chat works
 
-- Auth remains intentionally MVP-style via `x-user-id` header (documented in README).
-- Chat authorization enforces match membership.
+## Known limitations
+
+- Auth is still MVP-style and relies on signed lightweight tokens instead of real session middleware/JWT refresh flow.
+- Secrets are hashed with SHA-256 for MVP stability; no password reset/recovery flow exists yet.

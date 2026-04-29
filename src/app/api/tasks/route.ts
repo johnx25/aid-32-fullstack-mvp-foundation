@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { fail, ok } from "@/lib/api-response";
 
 export async function GET() {
   const tasks = await prisma.task.findMany({
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json({ data: tasks });
+  return ok(tasks);
 }
 
 export async function POST(request: Request) {
@@ -17,15 +17,12 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return fail(400, "BAD_REQUEST", "Invalid JSON body");
   }
 
   const title = body.title?.trim();
   if (!title) {
-    return NextResponse.json(
-      { error: "Title is required" },
-      { status: 400 },
-    );
+    return fail(400, "BAD_REQUEST", "Title is required");
   }
 
   const task = await prisma.task.create({
@@ -35,5 +32,5 @@ export async function POST(request: Request) {
     },
   });
 
-  return NextResponse.json({ data: task }, { status: 201 });
+  return ok(task, 201);
 }

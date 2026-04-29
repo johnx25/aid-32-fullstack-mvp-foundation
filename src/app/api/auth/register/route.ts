@@ -1,71 +1,68 @@
 import { prisma } from "@/lib/prisma";
-import { createAuthSecret, hashSecret } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { fail, ok } from "@/lib/api-response";
+import { Prisma } from "@prisma/client";
+import { createHash, randomBytes } from "crypto";
 
-const MIN_SECRET_LENGTH = 12;
+function hashSecret(secret: string) {
+  return createHash("sha256").update(secret).digest("hex");
+}
+
+function generateSecret() {
+  return randomBytes(18).toString("base64url");
+}
 
 export async function POST(request: Request) {
-  let body: { email?: string; displayName?: string; secret?: string; bio?: string; city?: string; interests?: string };
+  let body: { email?: string; displayName?: string; bio?: string; city?: string; interests?: string };
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return fail(400, "BAD_REQUEST", "Invalid JSON body");
   }
 
   const email = body.email?.trim().toLowerCase();
   const displayName = body.displayName?.trim();
-  const secretInput = body.secret?.trim();
   const bio = body.bio?.trim() || "";
   const city = body.city?.trim() || "";
   const interests = body.interests?.trim() || "";
 
   if (!email || !displayName) {
-    return NextResponse.json({ error: "email and displayName are required" }, { status: 400 });
+    return fail(400, "BAD_REQUEST", "email and displayName are required");
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { email }, select: { id: true } });
-  if (existingUser) {
-    return NextResponse.json({ error: "User already exists" }, { status: 409 });
-  }
+  try {
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return fail(409, "CONFLICT", "A user with this email already exists");
+    }
 
-  const generatedSecret = secretInput || createAuthSecret();
-  if (generatedSecret.length < MIN_SECRET_LENGTH) {
-    return NextResponse.json(
-      { error: `secret must be at least ${MIN_SECRET_LENGTH} characters` },
-      { status: 400 },
-    );
-  }
-
-  const user = await prisma.user.create({
-    data: {
-      email,
-      displayName,
-      authSecretHash: hashSecret(generatedSecret),
-      profile: {
-        create: { bio, city, interests },
+    const secret = generateSecret();
+    const user = await prisma.user.create({
+      data: {
+        email,
+        displayName,
+        secretHash: hashSecret(secret),
+        profile: {
+          create: { bio, city, interests },
+        },
       },
-    },
-    include: { profile: true },
-  });
-
-  if (!user.profile) {
-    const profile = await prisma.profile.create({
-      data: { userId: user.id, bio, city, interests },
+      include: { profile: true },
     });
 
-    return NextResponse.json({ data: { userId: user.id, email: user.email, displayName: user.displayName, profile } }, { status: 201 });
-  }
-
-  return NextResponse.json(
-    {
-      data: {
+    return ok(
+      {
         userId: user.id,
         email: user.email,
         displayName: user.displayName,
         profile: user.profile,
-        secret: generatedSecret,
+        secret,
       },
-    },
-    { status: 201 },
-  );
+      201,
+    );
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return fail(409, "CONFLICT", "A user with this email already exists");
+    }
+
+    return fail(500, "INTERNAL_ERROR", "Internal server error");
+  }
 }
