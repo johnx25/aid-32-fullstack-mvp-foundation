@@ -1,8 +1,12 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
-if (!process.env.DIRECT_URL && process.env.DATABASE_URL) {
-  process.env.DIRECT_URL = process.env.DATABASE_URL;
+const isMigrateCommand = process.argv.some((arg) => arg.includes("migrate"));
+
+if (isMigrateCommand && !process.env.DIRECT_URL) {
+  throw new Error(
+    "DIRECT_URL is required for Prisma migrate commands. Set DIRECT_URL to a direct PostgreSQL connection string."
+  );
 }
 
 export default defineConfig({
