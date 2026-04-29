@@ -1,13 +1,15 @@
 import { PrismaClient } from "@prisma/client";
-import { createHash } from "crypto";
+import { hashSecret } from "../src/lib/secret-hash";
 
 const prisma = new PrismaClient();
 
-function hashSecret(secret: string) {
-  return createHash("sha256").update(secret).digest("hex");
-}
-
 async function main() {
+  const seedMode = process.env.SEED_MODE || "real";
+  if (seedMode !== "demo") {
+    console.info("Skipping demo users. Set SEED_MODE=demo to load test accounts.");
+    return;
+  }
+
   const users = [
     {
       email: "alice@example.com",

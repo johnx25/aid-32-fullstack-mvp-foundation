@@ -1,19 +1,16 @@
 import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual } from "crypto";
 
-const AUTH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
+export const AUTH_TOKEN_COOKIE_NAME = "aid32_auth_token";
+export const AUTH_TOKEN_TTL_SECONDS = 60 * 60 * 12;
 
 function getAuthTokenSigningKey() {
   const configured = process.env.AUTH_TOKEN_SECRET || process.env.NEXTAUTH_SECRET;
-  if (configured) {
+  if (configured && configured.trim().length >= 32) {
     return configured;
   }
-
-  if (process.env.NODE_ENV === "development") {
-    console.warn("[auth] Using development fallback for AUTH_TOKEN_SECRET");
-    return "local-dev-auth-token-secret";
-  }
-
+  console.error("[auth] AUTH_TOKEN_SECRET (or NEXTAUTH_SECRET) must be set and at least 32 chars");
   throw new Error("AUTH_CONFIG_MISSING");
 }
 
@@ -28,6 +25,16 @@ export function createUserAuthToken(userId: number) {
   return {
     token: `${payload}.${signature}`,
     expiresAt,
+  };
+}
+
+export function getAuthCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: AUTH_TOKEN_TTL_SECONDS,
   };
 }
 
@@ -64,6 +71,17 @@ function verifyUserAuthToken(token: string): number | null {
 
 // Auth skeleton: replace header-based identity with a real session provider.
 export async function requireCurrentUserId(): Promise<number> {
+  const requestCookies = await cookies();
+  const cookieToken = requestCookies.get(AUTH_TOKEN_COOKIE_NAME)?.value;
+  if (cookieToken) {
+    const userIdFromCookie = verifyUserAuthToken(cookieToken);
+    if (userIdFromCookie) {
+      return userIdFromCookie;
+    }
+    console.warn("[auth] Invalid auth cookie");
+    throw new Error("UNAUTHORIZED");
+  }
+
   const requestHeaders = await headers();
   const authToken = requestHeaders.get("x-auth-token");
   if (!authToken) {

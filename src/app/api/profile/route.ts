@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUserId } from "@/lib/auth";
 import { fail, ok } from "@/lib/api-response";
-import { sanitizeUserText } from "@/lib/validation";
+import { DEFAULT_AVATAR_URL, sanitizeUserText } from "@/lib/validation";
 
 export async function GET() {
   try {
@@ -20,6 +20,7 @@ export async function GET() {
       userId: profile.userId,
       email: profile.user.email,
       displayName: profile.user.displayName,
+      avatarUrl: profile.avatarUrl,
       bio: profile.bio,
       city: profile.city,
       interests: profile.interests,
@@ -36,7 +37,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const currentUserId = await requireCurrentUserId();
-    let body: { displayName?: string; bio?: string; city?: string; interests?: string };
+    let body: { displayName?: string; bio?: string; city?: string; interests?: string; avatarUrl?: string };
     try {
       body = (await request.json()) as typeof body;
     } catch {
@@ -52,6 +53,7 @@ export async function PATCH(request: Request) {
     const bio = body.bio ? sanitizeUserText(body.bio, 500) : undefined;
     const city = body.city ? sanitizeUserText(body.city, 120) : undefined;
     const interests = body.interests ? sanitizeUserText(body.interests, 500) : undefined;
+    const avatarUrl = body.avatarUrl ? sanitizeUserText(body.avatarUrl, 300) : undefined;
 
     if (displayName && displayName.length >= 2) {
       await prisma.user.update({ where: { id: currentUserId }, data: { displayName } });
@@ -60,6 +62,7 @@ export async function PATCH(request: Request) {
     const updated = await prisma.profile.update({
       where: { userId: currentUserId },
       data: {
+        avatarUrl: avatarUrl ?? undefined,
         bio: bio ?? undefined,
         city: city ?? undefined,
         interests: interests ?? undefined,
@@ -72,6 +75,7 @@ export async function PATCH(request: Request) {
       userId: updated.userId,
       email: updated.user.email,
       displayName: updated.user.displayName,
+      avatarUrl: updated.avatarUrl || DEFAULT_AVATAR_URL,
       bio: updated.bio,
       city: updated.city,
       interests: updated.interests,

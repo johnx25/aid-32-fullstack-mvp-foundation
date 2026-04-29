@@ -4,6 +4,7 @@ import { fail, ok } from "@/lib/api-response";
 import { Prisma } from "@prisma/client";
 import { sanitizeUserText } from "@/lib/validation";
 import { log } from "@/lib/logger";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 function parseMatchId(value: string): number | null {
   const id = Number(value);
@@ -80,9 +81,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
       return fail(400, "BAD_REQUEST", "Invalid JSON body");
     }
 
-    const content = body.content ? sanitizeUserText(body.content, 1000) : "";
+    const content = body.content ? sanitizeUserText(body.content, 500) : "";
     if (!content) {
       return fail(400, "BAD_REQUEST", "content is required");
+    }
+
+    const cooldown = checkRateLimit(`chat:send:${currentUserId}:${matchId}`, 1, 2000);
+    if (!cooldown.allowed) {
+      return fail(429, "TOO_MANY_REQUESTS", "Message cooldown active. Please wait a moment.");
     }
 
     const message = await prisma.$transaction(async (tx) => {

@@ -2,15 +2,20 @@ import { prisma } from "@/lib/prisma";
 import { fail, ok } from "@/lib/api-response";
 import { sanitizeUserText } from "@/lib/validation";
 import { log } from "@/lib/logger";
+import { requireCurrentUserId } from "@/lib/auth";
 
 export async function GET() {
   try {
+    await requireCurrentUserId();
     const tasks = await prisma.task.findMany({
       orderBy: { createdAt: "desc" },
     });
 
     return ok(tasks);
   } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return fail(401, "UNAUTHORIZED", "Unauthorized");
+    }
     log("error", "tasks.list.error", { reason: error instanceof Error ? error.message : "unknown" });
     return fail(500, "INTERNAL_ERROR", "Internal server error");
   }
@@ -33,6 +38,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    await requireCurrentUserId();
     const task = await prisma.task.create({
       data: {
         title,
@@ -42,6 +48,9 @@ export async function POST(request: Request) {
 
     return ok(task, 201);
   } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return fail(401, "UNAUTHORIZED", "Unauthorized");
+    }
     log("error", "tasks.create.error", { reason: error instanceof Error ? error.message : "unknown" });
     return fail(500, "INTERNAL_ERROR", "Internal server error");
   }
