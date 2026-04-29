@@ -43,12 +43,16 @@
   padding: 0.6rem 0.7rem;
 }
 
-.card button {
+.card button,
+.linkButton {
   border: 0;
   background: #111827;
   color: #ffffff;
   padding: 0.6rem 0.7rem;
   cursor: pointer;
+  text-align: center;
+  display: inline-block;
+  border-radius: 10px;
 }
 
 .card button:disabled {
@@ -62,13 +66,4 @@
 
 .error {
   color: #b91c1c;
-}
-
-.success {
-  color: #166534;
-}
-
-.secret {
-  overflow-wrap: anywhere;
-  font-size: 0.95rem;
 }
