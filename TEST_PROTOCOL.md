@@ -2,12 +2,12 @@
 
 Date: 2026-04-29 (UTC)
 
-## Validation commands (Supabase Postgres)
+## Validation commands
 
-- `DATABASE_URL='<supabase-pooler-url>' DIRECT_URL='<supabase-direct-url>' npm run prisma:migrate` -> PASS
-- `DATABASE_URL='<supabase-pooler-url>' DIRECT_URL='<supabase-direct-url>' npm run lint` -> PASS
-- `DATABASE_URL='<supabase-pooler-url>' DIRECT_URL='<supabase-direct-url>' npm run build` -> PASS
-- `DATABASE_URL='<supabase-pooler-url>' DIRECT_URL='<supabase-direct-url>' AUTH_TOKEN_SECRET='<32+ char secret>' node scripts/stability-flow-check.mjs` (with app running) -> PASS
+- `DATABASE_URL='file:./prisma/dev.db' npm run prisma:migrate` -> PASS
+- `DATABASE_URL='file:./prisma/dev.db' npm run lint` -> PASS
+- `DATABASE_URL='file:./prisma/dev.db' npm run build` -> PASS
+- `DATABASE_URL='file:./prisma/dev.db' AUTH_TOKEN_SECRET='<32+ char secret>' node scripts/stability-flow-check.mjs` (with app running) -> PASS
 
 ## End-to-end API flow (real scenario)
 
