@@ -84,6 +84,7 @@ export async function POST(request: Request) {
         profile: user.profile,
         secret,
         authTokenExpiresAt: new Date(auth.expiresAt * 1000).toISOString(),
+        redirectTo: "/",
       },
       201,
     );
