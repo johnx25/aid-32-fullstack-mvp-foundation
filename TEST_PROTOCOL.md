@@ -12,6 +12,7 @@ Date: 2026-04-29 (UTC)
 
 ```bash
 export DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public'
+# Optional: if omitted, DIRECT_URL falls back to DATABASE_URL.
 export DIRECT_URL='postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public'
 ```
 
@@ -19,11 +20,11 @@ For Supabase, replace both URLs with Supabase-compatible values (pooled for `DAT
 
 ## Commands run and outcomes
 
-1. `npm run prisma:generate` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
-2. `npx prisma validate` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
-3. `npm run lint` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
-4. `npm run build` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
-5. `npm run prisma:migrate:deploy` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS on a reachable PostgreSQL/Supabase target
+1. `npm run prisma:generate` (with `DATABASE_URL` set; `DIRECT_URL` optional) -> PASS
+2. `npx prisma validate` (with `DATABASE_URL` set; `DIRECT_URL` optional) -> PASS
+3. `npm run lint` (with `DATABASE_URL` set; `DIRECT_URL` optional) -> PASS
+4. `npm run build` (with `DATABASE_URL` set; `DIRECT_URL` optional) -> PASS
+5. `npm run prisma:migrate:deploy` (with `DATABASE_URL` set; `DIRECT_URL` optional) -> PASS on a reachable PostgreSQL/Supabase target
 6. `GET /api/health/db` against a running app + reachable DB -> PASS (`200`, `status: ok`)
 
 ## Deterministic validation path (preferred)
@@ -45,4 +46,4 @@ For Supabase verification, provide reachable Supabase `DATABASE_URL`/`DIRECT_URL
 ## Additional notes
 
 - `prisma.config.ts` imports `dotenv/config`, so Prisma CLI commands resolve `.env` values in this repository layout.
-- `.env` and `.env.example` now both use PostgreSQL sample URLs including `DIRECT_URL`, matching the active datasource schema.
+- `.env` and `.env.example` use PostgreSQL sample URLs. `DIRECT_URL` remains supported but can be omitted when `DATABASE_URL` is sufficient.
