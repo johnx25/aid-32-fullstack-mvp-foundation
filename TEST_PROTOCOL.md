@@ -22,7 +22,7 @@ Date: 2026-04-29 (UTC)
 - Login with correct secret -> `200`
 
 4. Missing/invalid token edge case
-- `GET /api/profile` without `x-user-id` -> `401 UNAUTHORIZED`
+- `GET /api/profile` without `x-auth-token` -> `401 UNAUTHORIZED`
 
 5. Discovery and likes
 - `GET /api/discovery` returns other profiles
@@ -43,5 +43,5 @@ Date: 2026-04-29 (UTC)
 
 ## Known limitations
 
-- Auth is still MVP-style and relies on `x-user-id` instead of signed sessions/JWT.
+- Auth is still MVP-style and relies on signed lightweight tokens instead of real session middleware/JWT refresh flow.
 - Secrets are hashed with SHA-256 for MVP stability; no password reset/recovery flow exists yet.

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { fail, ok } from "@/lib/api-response";
+import { Prisma } from "@prisma/client";
 import { createHash, randomBytes } from "crypto";
 
 function hashSecret(secret: string) {
@@ -28,32 +29,40 @@ export async function POST(request: Request) {
     return fail(400, "BAD_REQUEST", "email and displayName are required");
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) {
-    return fail(409, "CONFLICT", "A user with this email already exists");
-  }
+  try {
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return fail(409, "CONFLICT", "A user with this email already exists");
+    }
 
-  const secret = generateSecret();
-  const user = await prisma.user.create({
-    data: {
-      email,
-      displayName,
-      secretHash: hashSecret(secret),
-      profile: {
-        create: { bio, city, interests },
+    const secret = generateSecret();
+    const user = await prisma.user.create({
+      data: {
+        email,
+        displayName,
+        secretHash: hashSecret(secret),
+        profile: {
+          create: { bio, city, interests },
+        },
       },
-    },
-    include: { profile: true },
-  });
+      include: { profile: true },
+    });
 
-  return ok(
-    {
-      userId: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      profile: user.profile,
-      secret,
-    },
-    201,
-  );
+    return ok(
+      {
+        userId: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        profile: user.profile,
+        secret,
+      },
+      201,
+    );
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return fail(409, "CONFLICT", "A user with this email already exists");
+    }
+
+    return fail(500, "INTERNAL_ERROR", "Internal server error");
+  }
 }

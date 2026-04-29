@@ -23,8 +23,8 @@ Open `http://localhost:3200`.
 Current MVP auth uses registration secrets with hashed storage:
 
 - `POST /api/auth/register` returns a one-time `secret` for the created user.
-- `POST /api/auth/login` requires `email` + `secret` and returns the `userId`.
-- Protected endpoints still expect `x-user-id` request header for MVP session simulation.
+- `POST /api/auth/login` requires `email` + `secret` and returns a signed `authToken`.
+- Protected endpoints require `x-auth-token`; optional `x-user-id` must match token identity.
 - Identity parsing lives in `src/lib/auth.ts`.
 - Replace this with your real auth provider/session middleware.
 

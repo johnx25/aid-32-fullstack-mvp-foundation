@@ -64,20 +64,26 @@ async function main() {
     body: JSON.stringify({ email: aEmail, secret: regA.body.data.secret }),
   });
   assert(loginA.status === 200, "login A failed");
+  assert(loginA.body.data.authToken, "login A did not return authToken");
 
   const loginB = await call("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email: bEmail, secret: regB.body.data.secret }),
   });
   assert(loginB.status === 200, "login B failed");
+  assert(loginB.body.data.authToken, "login B did not return authToken");
 
   const unauthorizedProfile = await call("/api/profile");
   assert(unauthorizedProfile.status === 401, "missing token should return 401");
 
-  const profileA = await call("/api/profile", { headers: { "x-user-id": String(loginA.body.data.userId) } });
+  const profileA = await call("/api/profile", {
+    headers: { "x-user-id": String(loginA.body.data.userId), "x-auth-token": loginA.body.data.authToken },
+  });
   assert(profileA.status === 200, "profile A failed");
 
-  const discoveryA = await call("/api/discovery", { headers: { "x-user-id": String(loginA.body.data.userId) } });
+  const discoveryA = await call("/api/discovery", {
+    headers: { "x-user-id": String(loginA.body.data.userId), "x-auth-token": loginA.body.data.authToken },
+  });
   assert(discoveryA.status === 200 && Array.isArray(discoveryA.body.data), "discovery A failed");
 
   const targetProfile = discoveryA.body.data.find((p) => p.userId === loginB.body.data.userId);
@@ -85,35 +91,39 @@ async function main() {
 
   const likeA = await call("/api/likes", {
     method: "POST",
-    headers: { "x-user-id": String(loginA.body.data.userId) },
+    headers: { "x-user-id": String(loginA.body.data.userId), "x-auth-token": loginA.body.data.authToken },
     body: JSON.stringify({ targetProfileId: targetProfile.profileId }),
   });
   assert(likeA.status === 201, "like A->B failed");
 
-  const discoveryB = await call("/api/discovery", { headers: { "x-user-id": String(loginB.body.data.userId) } });
+  const discoveryB = await call("/api/discovery", {
+    headers: { "x-user-id": String(loginB.body.data.userId), "x-auth-token": loginB.body.data.authToken },
+  });
   const targetProfileB = discoveryB.body.data.find((p) => p.userId === loginA.body.data.userId);
   assert(targetProfileB, "user A not found in user B discovery");
 
   const likeB = await call("/api/likes", {
     method: "POST",
-    headers: { "x-user-id": String(loginB.body.data.userId) },
+    headers: { "x-user-id": String(loginB.body.data.userId), "x-auth-token": loginB.body.data.authToken },
     body: JSON.stringify({ targetProfileId: targetProfileB.profileId }),
   });
   assert(likeB.status === 201 && likeB.body.data.isMatch === true, "reciprocal like should create match");
 
-  const matchesA = await call("/api/matches", { headers: { "x-user-id": String(loginA.body.data.userId) } });
+  const matchesA = await call("/api/matches", {
+    headers: { "x-user-id": String(loginA.body.data.userId), "x-auth-token": loginA.body.data.authToken },
+  });
   assert(matchesA.status === 200 && matchesA.body.data.length > 0, "matches for A missing");
   const matchId = matchesA.body.data[0].matchId;
 
   const createMessage = await call(`/api/chats/${matchId}`, {
     method: "POST",
-    headers: { "x-user-id": String(loginA.body.data.userId) },
+    headers: { "x-user-id": String(loginA.body.data.userId), "x-auth-token": loginA.body.data.authToken },
     body: JSON.stringify({ content: "hello from flow" }),
   });
   assert(createMessage.status === 201, "chat message create failed");
 
   const chats = await call(`/api/chats/${matchId}`, {
-    headers: { "x-user-id": String(loginB.body.data.userId) },
+    headers: { "x-user-id": String(loginB.body.data.userId), "x-auth-token": loginB.body.data.authToken },
   });
   assert(chats.status === 200 && chats.body.data.length > 0, "chat fetch failed");
 

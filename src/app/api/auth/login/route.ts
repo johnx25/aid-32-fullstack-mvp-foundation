@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { fail, ok } from "@/lib/api-response";
+import { createUserAuthToken } from "@/lib/auth";
 import { createHash } from "crypto";
 
 function hashSecret(secret: string) {
@@ -26,11 +27,15 @@ export async function POST(request: Request) {
     return fail(401, "UNAUTHORIZED", "Invalid credentials");
   }
 
+  const auth = createUserAuthToken(user.id);
+
   return ok({
     userId: user.id,
     email: user.email,
     displayName: user.displayName,
     profile: user.profile,
-    tokenHint: "Use x-user-id header with this userId for authenticated MVP endpoints",
+    authToken: auth.token,
+    authTokenExpiresAt: auth.expiresAt,
+    tokenHint: "Use x-auth-token for authenticated MVP endpoints",
   });
 }
