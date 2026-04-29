@@ -29,7 +29,8 @@ This repo now targets PostgreSQL for local/test and Supabase connectivity.
 - `DATABASE_URL` should point to either:
   - local PostgreSQL (example): `postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public`
   - Supabase pooled URL (transaction mode)
-- `DIRECT_URL` should be set to a direct PostgreSQL connection URL (for migrations and operations that require direct connectivity).
+- `DIRECT_URL` is required for Prisma migration commands and should point to a direct PostgreSQL connection URL.
+- For Supabase setups, keep `DATABASE_URL` as pooled URL and set `DIRECT_URL` to the direct connection URL.
 
 2. Apply migrations (preferred deterministic path):
 ```bash

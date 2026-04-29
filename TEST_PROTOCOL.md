@@ -15,7 +15,7 @@ export DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?sch
 export DIRECT_URL='postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public'
 ```
 
-For Supabase, replace both URLs with Supabase-compatible values (pooled for `DATABASE_URL`, direct for `DIRECT_URL` if required by your setup).
+For Supabase, replace both URLs with Supabase-compatible values (pooled for `DATABASE_URL`, direct for `DIRECT_URL`).
 
 ## Commands run and outcomes
 
@@ -45,4 +45,4 @@ For Supabase verification, provide reachable Supabase `DATABASE_URL`/`DIRECT_URL
 ## Additional notes
 
 - `prisma.config.ts` imports `dotenv/config`, so Prisma CLI commands resolve `.env` values in this repository layout.
-- `.env` and `.env.example` now both use PostgreSQL sample URLs including `DIRECT_URL`, matching the active datasource schema.
+- `.env` and `.env.example` use PostgreSQL sample URLs. `DIRECT_URL` is required for Prisma migrations and should be configured as a direct PostgreSQL URL.
