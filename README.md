@@ -38,8 +38,8 @@ Use these env vars in `.env`:
 
 Current MVP auth uses registration secrets with hashed storage:
 
-- `POST /api/auth/register` returns a one-time `secret` for the created user.
-- `POST /api/auth/login` requires `email` + `secret` and sets a signed auth token in an HttpOnly cookie.
+- `POST /api/auth/register` returns a one-time `secret`, sets a signed auth token in an HttpOnly cookie, and includes `authTokenExpiresAt` (ISO timestamp).
+- `POST /api/auth/login` requires `email` + `secret`, sets a signed auth token in an HttpOnly cookie, and includes `authTokenExpiresAt` (ISO timestamp).
 - `POST /api/auth/logout` clears the auth cookie.
 - `GET /api/auth/session` reads the current authenticated session from cookie.
 - Protected endpoints require a valid auth cookie (legacy `x-auth-token` header fallback is still accepted).
