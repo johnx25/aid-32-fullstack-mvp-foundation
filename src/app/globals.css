@@ -24,7 +24,7 @@ body {
   flex-direction: column;
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-geist-sans), "Manrope", "Avenir Next", sans-serif;
+  font-family: "Plus Jakarta Sans", "Sora", "Manrope", "Avenir Next", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

@@ -1,21 +1,16 @@
 .page {
-  --hero-kicker: #0f4fb8;
-  --hero-accent: rgba(21, 101, 216, 0.22);
-  --hero-accent-soft: rgba(15, 118, 110, 0.18);
-  --focus-ring: #3b82f6;
-  --success-text: #166534;
-  --success-bg: #ebf9ef;
+  --focus-ring: #0f6dce;
+  --success-text: #17522c;
+  --success-bg: #ebfaef;
   --link-color: #0f4fb8;
-  --cta-start: #1565d8;
-  --cta-end: #0f4fb8;
 
   min-height: 100dvh;
   display: grid;
   grid-template-columns: 1.1fr 1fr;
   background:
-    radial-gradient(circle at 12% 16%, var(--hero-accent) 0%, transparent 34%),
-    radial-gradient(circle at 78% 12%, var(--hero-accent-soft) 0%, transparent 30%),
-    linear-gradient(145deg, #f8fbff 0%, #eef4ff 42%, #edf8f6 100%);
+    radial-gradient(1200px 640px at -6% -10%, rgba(241, 130, 32, 0.26), transparent 60%),
+    radial-gradient(1100px 640px at 104% 0%, rgba(0, 142, 212, 0.22), transparent 58%),
+    linear-gradient(140deg, #f9f6ef 0%, #f4f8ff 44%, #eff9f6 100%);
 }
 
 .hero {
@@ -30,28 +25,28 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--hero-kicker);
+  color: #2a3f63;
 }
 
 .hero h1 {
   font-size: clamp(2rem, 5vw, 4rem);
   line-height: 1.03;
-  color: var(--foreground);
+  color: #10131f;
 }
 
 .subtitle {
   max-width: 34ch;
-  color: var(--text-muted);
+  color: #41526d;
   font-size: 1.08rem;
 }
 
 .panel {
   margin: clamp(1rem, 3vw, 2rem);
-  border: 1px solid var(--border);
+  border: 1px solid #ced9ea;
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(7px);
-  box-shadow: 0 24px 60px -38px rgba(15, 23, 42, 0.45);
+  box-shadow: 0 22px 56px -42px rgba(18, 36, 70, 0.52);
   padding: clamp(1rem, 2.8vw, 2rem);
   display: grid;
   align-content: start;
@@ -78,7 +73,7 @@
 .form label {
   display: grid;
   gap: 0.35rem;
-  color: var(--foreground);
+  color: #1d2f4a;
   font-size: 0.93rem;
   font-weight: 600;
 }
@@ -92,10 +87,10 @@
 
 .form input,
 .form textarea {
-  border: 1px solid var(--border);
-  background: var(--surface);
+  border: 1px solid #cdd9eb;
+  background: #fbfdff;
   padding: 0.75rem 0.85rem;
-  color: var(--foreground);
+  color: #13233b;
 }
 
 .form input:focus,
@@ -110,7 +105,7 @@
   font-weight: 700;
   color: #ffffff;
   padding: 0.78rem 0.92rem;
-  background: linear-gradient(90deg, var(--cta-start) 0%, var(--cta-end) 100%);
+  background: linear-gradient(92deg, #0055bc 0%, #0080d8 100%);
 }
 
 .form button:disabled {
@@ -119,11 +114,11 @@
 }
 
 .help {
-  color: var(--text-muted);
+  color: #41526d;
 }
 
 .error {
-  color: var(--error);
+  color: #8c1c2c;
   margin-bottom: 0.6rem;
 }
 
@@ -139,7 +134,7 @@
 .secret {
   margin-top: 0.9rem;
   overflow-wrap: anywhere;
-  color: var(--foreground);
+  color: #10131f;
   font-size: 0.95rem;
 }
 
@@ -152,7 +147,7 @@
 
 .switch {
   margin-top: 1rem;
-  color: var(--text-muted);
+  color: #41526d;
 }
 
 .switch a {
