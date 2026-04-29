@@ -29,7 +29,7 @@ function isBetaInviteAccepted(inviteCode: string | undefined) {
 }
 
 export async function POST(request: Request) {
-  let body: { email?: string; displayName?: string; bio?: string; city?: string; interests?: string; inviteCode?: string };
+  let body: { email?: string; displayName?: string; bio?: string; city?: string; interests?: string; inviteCode?: string; secret?: string };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -41,6 +41,7 @@ export async function POST(request: Request) {
   const bio = body.bio ? sanitizeUserText(body.bio, 500) : "";
   const city = body.city ? sanitizeUserText(body.city, 120) : "";
   const interests = body.interests ? sanitizeUserText(body.interests, 500) : "";
+  const customSecret = body.secret?.trim();
 
   if (!isBetaInviteAccepted(body.inviteCode)) {
     return fail(403, "FORBIDDEN", "Beta mode is enabled. A valid invite code is required.");
@@ -48,6 +49,9 @@ export async function POST(request: Request) {
 
   if (!email || !displayName || !isValidEmail(email) || displayName.length < 2) {
     return fail(400, "BAD_REQUEST", "email and displayName are required");
+  }
+  if (customSecret && (customSecret.length < 8 || customSecret.length > 128)) {
+    return fail(400, "BAD_REQUEST", "secret must be 8-128 characters");
   }
   const limit = checkRateLimit(`auth:register:${email}`, 3, 10 * 60 * 1000);
   if (!limit.allowed) {
@@ -60,7 +64,7 @@ export async function POST(request: Request) {
       return fail(409, "CONFLICT", "A user with this email already exists");
     }
 
-    const secret = generateSecret();
+    const secret = customSecret || generateSecret();
     const user = await prisma.user.create({
       data: {
         email,
