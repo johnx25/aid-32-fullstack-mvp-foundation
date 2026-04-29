@@ -78,8 +78,7 @@ export async function requireCurrentUserId(): Promise<number> {
     if (userIdFromCookie) {
       return userIdFromCookie;
     }
-    console.warn("[auth] Invalid auth cookie");
-    throw new Error("UNAUTHORIZED");
+    console.warn("[auth] Invalid auth cookie; attempting legacy header auth fallback");
   }
 
   const requestHeaders = await headers();
