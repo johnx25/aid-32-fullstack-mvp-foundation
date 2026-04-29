@@ -27,11 +27,13 @@ function buildCookieHeader() {
 
 async function call(path, options = {}) {
   const cookieHeader = buildCookieHeader();
+  const inputHeaders = options.headers || {};
+  const hasExplicitCookieHeader = Object.prototype.hasOwnProperty.call(inputHeaders, "cookie");
   const mergedHeaders = {
     "content-type": "application/json",
-    ...(options.headers || {}),
+    ...inputHeaders,
   };
-  if (cookieHeader && !mergedHeaders.cookie) {
+  if (cookieHeader && !hasExplicitCookieHeader) {
     mergedHeaders.cookie = cookieHeader;
   }
 
@@ -59,6 +61,14 @@ function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
   }
+}
+
+function legacyAuthHeaders(userId, token) {
+  return {
+    cookie: "",
+    "x-user-id": String(userId),
+    "x-auth-token": token,
+  };
 }
 
 async function main() {
@@ -126,12 +136,12 @@ async function main() {
   assert(authTokenB, `login B did not set ${authCookieName} cookie`);
 
   const profileA = await call("/api/profile", {
-    headers: { "x-user-id": String(loginA.body.data.userId), "x-auth-token": authToken },
+    headers: legacyAuthHeaders(loginA.body.data.userId, authToken),
   });
   assert(profileA.status === 200, "profile A failed");
 
   const discoveryA = await call("/api/discovery", {
-    headers: { "x-user-id": String(loginA.body.data.userId), "x-auth-token": authToken },
+    headers: legacyAuthHeaders(loginA.body.data.userId, authToken),
   });
   assert(discoveryA.status === 200 && Array.isArray(discoveryA.body.data), "discovery A failed");
 
@@ -140,39 +150,39 @@ async function main() {
 
   const likeA = await call("/api/likes", {
     method: "POST",
-    headers: { "x-user-id": String(loginA.body.data.userId), "x-auth-token": authToken },
+    headers: legacyAuthHeaders(loginA.body.data.userId, authToken),
     body: JSON.stringify({ targetProfileId: targetProfile.profileId }),
   });
   assert(likeA.status === 201, "like A->B failed");
 
   const discoveryB = await call("/api/discovery", {
-    headers: { "x-user-id": String(loginB.body.data.userId), "x-auth-token": authTokenB },
+    headers: legacyAuthHeaders(loginB.body.data.userId, authTokenB),
   });
   const targetProfileB = discoveryB.body.data.find((p) => p.userId === loginA.body.data.userId);
   assert(targetProfileB, "user A not found in user B discovery");
 
   const likeB = await call("/api/likes", {
     method: "POST",
-    headers: { "x-user-id": String(loginB.body.data.userId), "x-auth-token": authTokenB },
+    headers: legacyAuthHeaders(loginB.body.data.userId, authTokenB),
     body: JSON.stringify({ targetProfileId: targetProfileB.profileId }),
   });
   assert(likeB.status === 201 && likeB.body.data.isMatch === true, "reciprocal like should create match");
 
   const matchesA = await call("/api/matches", {
-    headers: { "x-user-id": String(loginA.body.data.userId), "x-auth-token": authToken },
+    headers: legacyAuthHeaders(loginA.body.data.userId, authToken),
   });
   assert(matchesA.status === 200 && matchesA.body.data.length > 0, "matches for A missing");
   const matchId = matchesA.body.data[0].matchId;
 
   const createMessage = await call(`/api/chats/${matchId}`, {
     method: "POST",
-    headers: { "x-user-id": String(loginA.body.data.userId), "x-auth-token": authToken },
+    headers: legacyAuthHeaders(loginA.body.data.userId, authToken),
     body: JSON.stringify({ content: "hello from flow" }),
   });
   assert(createMessage.status === 201, "chat message create failed");
 
   const chats = await call(`/api/chats/${matchId}`, {
-    headers: { "x-user-id": String(loginB.body.data.userId), "x-auth-token": authTokenB },
+    headers: legacyAuthHeaders(loginB.body.data.userId, authTokenB),
   });
   assert(chats.status === 200 && chats.body.data.length > 0, "chat fetch failed");
 
