@@ -4,8 +4,10 @@ export type ApiErrorCode =
   | "BAD_REQUEST"
   | "UNAUTHORIZED"
   | "FORBIDDEN"
+  | "PROFILE_INCOMPLETE"
   | "NOT_FOUND"
   | "CONFLICT"
+  | "PROFILE_INCOMPLETE"
   | "INTERNAL_ERROR";
 
 export function ok<T>(data: T, status = 200) {
