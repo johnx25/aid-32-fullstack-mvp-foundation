@@ -29,11 +29,11 @@ This repo now targets PostgreSQL for local/test and Supabase connectivity.
 - `DATABASE_URL` should point to either:
   - local PostgreSQL (example): `postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public`
   - Supabase pooled URL (transaction mode)
-- Optional `DIRECT_URL` can be set to a direct PostgreSQL connection URL when your environment requires it.
+- `DIRECT_URL` should be set to a direct PostgreSQL connection URL (for migrations and operations that require direct connectivity).
 
-2. Apply migrations:
+2. Apply migrations (preferred deterministic path):
 ```bash
-npm run prisma:migrate
+npm run prisma:migrate:deploy
 ```
 
 3. Seed demo users (optional):
@@ -45,8 +45,10 @@ If Supabase secrets are unavailable, use any local PostgreSQL instance with the 
 
 ## Migration safety
 
-- The full historical migration chain under `prisma/migrations/` is preserved to keep `prisma migrate deploy` compatible with already-migrated environments.
-- Do not delete or rewrite existing migration folders/checksums in place.
+- Legacy SQLite migration history under `prisma/migrations/` is preserved unchanged.
+- PostgreSQL/Supabase test path uses isolated baseline migrations under `prisma/migrations_postgres/` (configured via `prisma.config.ts`).
+- This avoids rewriting previously applied migration semantics/checksums while providing a clean `migrate deploy` path for new PostgreSQL databases.
+- Safe execution path for this repo stage: start with an empty PostgreSQL database, run `npm run prisma:migrate:deploy`, then seed if needed.
 
 ## Beta launch controls
 
