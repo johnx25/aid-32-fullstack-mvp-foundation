@@ -1,49 +1,42 @@
-# Test Protocol (AID-42 Stability)
+# Test Protocol (AID-59 PostgreSQL/Supabase Path)
 
 Date: 2026-04-29 (UTC)
 
-## Validation commands
+## Forward-safe migration strategy
 
-- `DATABASE_URL='file:./prisma/dev.db' npm run prisma:migrate` -> PASS
-- `DATABASE_URL='file:./prisma/dev.db' npm run lint` -> PASS
-- `DATABASE_URL='file:./prisma/dev.db' npm run build` -> PASS
-- `DATABASE_URL='file:./prisma/dev.db' AUTH_TOKEN_SECRET='<32+ char secret>' node scripts/stability-flow-check.mjs` (with app running) -> PASS
+- Legacy SQLite migration history remains untouched in `prisma/migrations/`.
+- PostgreSQL/Supabase path is isolated in `prisma/migrations_postgres/` and is now the configured migrations path.
+- Rationale: avoids rewriting semantics/checksums of previously applied migrations while enabling deterministic PostgreSQL bootstrap via `migrate deploy`.
 
-## End-to-end API flow (real scenario)
+## Required environment
 
-1. Register and store secret
-- `POST /api/auth/register` for two new users -> `201`
-- Both responses return one-time `secret` values
+```bash
+export DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public'
+export DIRECT_URL='postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public'
+```
 
-2. Duplicate registration edge case
-- Register same email again -> `409 CONFLICT`
+For Supabase, replace both URLs with Supabase-compatible values (pooled for `DATABASE_URL`, direct for `DIRECT_URL` if required by your setup).
 
-3. Login and failed-login edge case
-- Login with wrong secret -> `401 UNAUTHORIZED` and failed-login log entry
-- Login with correct secret -> `200`
+## Commands run and outcomes
 
-4. Missing auth edge case
-- `GET /api/profile` without auth cookie -> `401 UNAUTHORIZED`
-- `GET /api/profile` with invalid auth cookie but valid legacy auth headers -> `200` (fallback still accepted during migration)
+1. `npm run prisma:generate` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
+2. `npx prisma validate` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
+3. `npm run lint` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
+4. `npm run build` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
+5. `npm run prisma:migrate:deploy` (with `DATABASE_URL` and `DIRECT_URL` set) -> FAIL (`P1001: Can't reach database server at 127.0.0.1:5432`)
 
-5. Discovery and likes
-- `GET /api/discovery` returns other profiles
-- Like target profile -> `201`
-- Reciprocal like -> `201` with `isMatch: true` and match log entry
+## Deterministic validation path (preferred)
 
-6. Match and chat
-- `GET /api/matches` returns created match
-- `POST /api/chats/:matchId` sends message -> `201` with chat log entry
-- `GET /api/chats/:matchId` reads messages -> `200`
+For an empty local PostgreSQL database:
 
-## Manual checklist
+```bash
+DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public' \
+DIRECT_URL='postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public' \
+npm run prisma:migrate:deploy
 
-- [x] User can register
-- [x] User can log in
-- [x] Matching works
-- [x] Chat works
+DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public' \
+DIRECT_URL='postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public' \
+SEED_MODE=demo npm run prisma:seed
+```
 
-## Known limitations
-
-- Auth is still MVP-style and relies on signed lightweight tokens instead of real session middleware/JWT refresh flow.
-- Secrets are hashed with scrypt; SHA-256 verification is retained only as a legacy fallback for older stored hashes. No password reset/recovery flow exists yet.
+For Supabase verification, provide reachable Supabase `DATABASE_URL`/`DIRECT_URL` secrets and rerun the same commands.

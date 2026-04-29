@@ -129,10 +129,16 @@ export function LoginPage() {
 
   return (
     <main className={styles.page}>
+      <section className={styles.hero}>
+        <p className={styles.kicker}>AID-67</p>
+        <h1>Welcome back</h1>
+        <p className={styles.subtitle}>Sign in with your email and one-time secret to continue to your matches.</p>
+      </section>
+
       <section className={styles.panel}>
-        <header>
-          <h1>Sign in to AID-32</h1>
-          <p className={styles.help}>Use your registration secret to continue.</p>
+        <header className={styles.panelHeader}>
+          <h2>Sign in to AID-32</h2>
+          <p className={styles.help}>Secure access with your registration secret.</p>
         </header>
 
         {globalError ? <p className={styles.error}>{globalError}</p> : null}
@@ -142,31 +148,36 @@ export function LoginPage() {
         ) : (
           <div className={styles.grid}>
             <form onSubmit={handleLogin} className={styles.card}>
-              <h2>Login</h2>
-              <input
-                placeholder="Email"
-                type="email"
-                value={loginForm.email}
-                onChange={(e) => setLoginForm((prev) => ({ ...prev, email: e.target.value }))}
-                required
-              />
-              <input
-                placeholder="Secret"
-                type="password"
-                value={loginForm.secret}
-                onChange={(e) => setLoginForm((prev) => ({ ...prev, secret: e.target.value }))}
-                required
-              />
+              <label>
+                Email
+                <input
+                  placeholder="you@example.com"
+                  type="email"
+                  value={loginForm.email}
+                  onChange={(e) => setLoginForm((prev) => ({ ...prev, email: e.target.value }))}
+                  required
+                />
+              </label>
+              <label>
+                Secret
+                <input
+                  placeholder="Paste your secret"
+                  type="password"
+                  value={loginForm.secret}
+                  onChange={(e) => setLoginForm((prev) => ({ ...prev, secret: e.target.value }))}
+                  required
+                />
+              </label>
               <button type="submit" disabled={isLoggingIn}>
                 {isLoggingIn ? "Signing in..." : "Sign in"}
               </button>
             </form>
 
             <aside className={styles.card}>
-              <h2>New here?</h2>
-              <p className={styles.help}>Create your account on the dedicated register page.</p>
+              <h3>Need an account?</h3>
+              <p className={styles.help}>Register first and keep your generated secret safe.</p>
               <Link href="/register" className={styles.linkButton}>
-                Go to register
+                Create account
               </Link>
             </aside>
           </div>
