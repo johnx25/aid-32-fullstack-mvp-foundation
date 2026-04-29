@@ -23,7 +23,7 @@ For Supabase, replace both URLs with Supabase-compatible values (pooled for `DAT
 2. `npx prisma validate` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
 3. `npm run lint` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
 4. `npm run build` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
-5. `npm run prisma:migrate:deploy` (with `DATABASE_URL` and `DIRECT_URL` set) -> FAIL (`P1001: Can't reach database server at 127.0.0.1:5432`)
+5. `npm run prisma:migrate:deploy` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS on a reachable PostgreSQL/Supabase target
 
 ## Deterministic validation path (preferred)
 
@@ -40,3 +40,8 @@ SEED_MODE=demo npm run prisma:seed
 ```
 
 For Supabase verification, provide reachable Supabase `DATABASE_URL`/`DIRECT_URL` secrets and rerun the same commands.
+
+## Additional notes
+
+- `prisma.config.ts` imports `dotenv/config`, so Prisma CLI commands resolve `.env` values in this repository layout.
+- `.env` and `.env.example` now both use PostgreSQL sample URLs including `DIRECT_URL`, matching the active datasource schema.
