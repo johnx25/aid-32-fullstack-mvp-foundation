@@ -22,24 +22,25 @@ Open `http://localhost:3200`.
 
 Current MVP auth is a placeholder for integration speed:
 
-- API endpoints expect `x-user-id` request header.
+- API endpoints expect `x-user-id` and `x-user-secret` request headers.
 - Identity parsing lives in `src/lib/auth.ts`.
-- `POST /api/auth/login` returns the `userId` used for the header-based session simulation.
+- `POST /api/auth/register` creates a user and returns a bootstrap secret once.
+- `POST /api/auth/login` requires `email` + `secret` and returns session header values.
 - Replace this with your real auth provider/session middleware.
 
 ## APIs
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
-- `GET /api/profile` (requires `x-user-id`)
-- `PATCH /api/profile` (requires `x-user-id`)
+- `GET /api/profile` (requires `x-user-id` + `x-user-secret`)
+- `PATCH /api/profile` (requires `x-user-id` + `x-user-secret`)
 - `GET /api/tasks`
 - `POST /api/tasks`
-- `GET /api/discovery` (requires `x-user-id`)
-- `POST /api/likes` (requires `x-user-id`, body: `{ "targetProfileId": <number> }`)
-- `GET /api/matches` (requires `x-user-id`)
-- `GET /api/chats/:matchId` (requires `x-user-id`)
-- `POST /api/chats/:matchId` (requires `x-user-id`, body: `{ "content": "..." }`)
+- `GET /api/discovery` (requires `x-user-id` + `x-user-secret`)
+- `POST /api/likes` (requires `x-user-id` + `x-user-secret`, body: `{ "targetProfileId": <number> }`)
+- `GET /api/matches` (requires `x-user-id` + `x-user-secret`)
+- `GET /api/chats/:matchId` (requires `x-user-id` + `x-user-secret`)
+- `POST /api/chats/:matchId` (requires `x-user-id` + `x-user-secret`, body: `{ "content": "..." }`)
 
 ## Data model
 

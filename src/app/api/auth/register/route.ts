@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { createAuthSecret, hashSecret } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
+const MIN_SECRET_LENGTH = 12;
+
 export async function POST(request: Request) {
-  let body: { email?: string; displayName?: string; bio?: string; city?: string; interests?: string };
+  let body: { email?: string; displayName?: string; secret?: string; bio?: string; city?: string; interests?: string };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -11,6 +14,7 @@ export async function POST(request: Request) {
 
   const email = body.email?.trim().toLowerCase();
   const displayName = body.displayName?.trim();
+  const secretInput = body.secret?.trim();
   const bio = body.bio?.trim() || "";
   const city = body.city?.trim() || "";
   const interests = body.interests?.trim() || "";
@@ -19,12 +23,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "email and displayName are required" }, { status: 400 });
   }
 
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: { displayName },
-    create: {
+  const existingUser = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  if (existingUser) {
+    return NextResponse.json({ error: "User already exists" }, { status: 409 });
+  }
+
+  const generatedSecret = secretInput || createAuthSecret();
+  if (generatedSecret.length < MIN_SECRET_LENGTH) {
+    return NextResponse.json(
+      { error: `secret must be at least ${MIN_SECRET_LENGTH} characters` },
+      { status: 400 },
+    );
+  }
+
+  const user = await prisma.user.create({
+    data: {
       email,
       displayName,
+      authSecretHash: hashSecret(generatedSecret),
       profile: {
         create: { bio, city, interests },
       },
@@ -41,7 +57,15 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(
-    { data: { userId: user.id, email: user.email, displayName: user.displayName, profile: user.profile } },
+    {
+      data: {
+        userId: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        profile: user.profile,
+        secret: generatedSecret,
+      },
+    },
     { status: 201 },
   );
 }
