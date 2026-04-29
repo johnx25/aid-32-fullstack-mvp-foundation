@@ -352,7 +352,7 @@ export function DatingMvpApp() {
           <form onSubmit={handleLogin} className={styles.card}>
             <h2>Login</h2>
             <input placeholder="Email" value={loginForm.email} onChange={(e) => setLoginForm((p) => ({ ...p, email: e.target.value }))} required />
-            <input placeholder="Secret" value={loginForm.secret} onChange={(e) => setLoginForm((p) => ({ ...p, secret: e.target.value }))} required />
+            <input type="password" placeholder="Secret" value={loginForm.secret} onChange={(e) => setLoginForm((p) => ({ ...p, secret: e.target.value }))} required />
             <button className={styles.primaryButton} type="submit" disabled={isLoggingIn}>
               {isLoggingIn ? "Signing in..." : "Sign in"}
             </button>

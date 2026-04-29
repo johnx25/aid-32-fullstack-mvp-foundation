@@ -6,8 +6,9 @@ import { requireCurrentUserId } from "@/lib/auth";
 
 export async function GET() {
   try {
-    await requireCurrentUserId();
+    const currentUserId = await requireCurrentUserId();
     const tasks = await prisma.task.findMany({
+      where: { userId: currentUserId },
       orderBy: { createdAt: "desc" },
     });
 
@@ -38,9 +39,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    await requireCurrentUserId();
+    const currentUserId = await requireCurrentUserId();
     const task = await prisma.task.create({
       data: {
+        userId: currentUserId,
         title,
         description: body.description ? sanitizeUserText(body.description, 2000) : null,
       },

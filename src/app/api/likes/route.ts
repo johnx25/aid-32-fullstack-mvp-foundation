@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     }
 
     if (!hasMinimumProfileQuality(ownProfile)) {
-      return fail(403, "FORBIDDEN", "Complete your profile first (avatar + bio) before liking others.");
+      return fail(403, "PROFILE_INCOMPLETE", "Complete your profile first (avatar + bio) before liking others.");
     }
 
     await prisma.like.upsert({
