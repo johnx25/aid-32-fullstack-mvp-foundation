@@ -76,6 +76,7 @@ Current MVP auth uses registration secrets with hashed storage:
 - `POST /api/auth/login`
 - `POST /api/auth/logout`
 - `GET /api/auth/session`
+- `GET /api/health/db` (database reachability probe)
 - `GET /api/profile` (requires auth)
 - `PATCH /api/profile` (requires auth)
 - `GET /api/tasks` (requires auth)

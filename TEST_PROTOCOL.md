@@ -24,6 +24,7 @@ For Supabase, replace both URLs with Supabase-compatible values (pooled for `DAT
 3. `npm run lint` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
 4. `npm run build` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
 5. `npm run prisma:migrate:deploy` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS on a reachable PostgreSQL/Supabase target
+6. `GET /api/health/db` against a running app + reachable DB -> PASS (`200`, `status: ok`)
 
 ## Deterministic validation path (preferred)
 
