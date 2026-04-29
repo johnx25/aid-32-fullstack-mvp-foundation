@@ -53,7 +53,18 @@ export async function POST(request: Request) {
       data: { userId: user.id, bio, city, interests },
     });
 
-    return NextResponse.json({ data: { userId: user.id, email: user.email, displayName: user.displayName, profile } }, { status: 201 });
+    return NextResponse.json(
+      {
+        data: {
+          userId: user.id,
+          email: user.email,
+          displayName: user.displayName,
+          profile,
+          secret: generatedSecret,
+        },
+      },
+      { status: 201 },
+    );
   }
 
   return NextResponse.json(
