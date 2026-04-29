@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import styles from "./dating-mvp-app.module.css";
 
 type Profile = {
@@ -18,9 +18,7 @@ type DiscoveryProfile = Profile & { likedByCurrentUser: boolean };
 type Match = { matchId: number; createdAt: string; displayName: string; profile: Omit<Profile, "userId" | "email" | "displayName"> | null };
 type Message = { messageId: number; senderId: number; senderDisplayName: string; content: string; createdAt: string };
 
-type ApiResult<T> = { ok: boolean; data?: T; error?: { code: string; message: string } };
-
-const storageKey = "aid32-mvp-auth";
+type ApiResult<T> = { success: boolean; data?: T; error?: { code: string; message: string } };
 
 function mapErrorMessage(error: ApiResult<unknown>["error"], fallback: string) {
   if (!error) return fallback;
@@ -34,40 +32,20 @@ function mapErrorMessage(error: ApiResult<unknown>["error"], fallback: string) {
 async function apiRequest<T>(
   path: string,
   options?: RequestInit,
-  auth?: { authToken: string; userId: number } | null,
 ): Promise<ApiResult<T>> {
   const headers = new Headers(options?.headers || {});
   headers.set("Content-Type", "application/json");
-  if (auth) {
-    headers.set("x-auth-token", auth.authToken);
-    headers.set("x-user-id", String(auth.userId));
-  }
 
   const response = await fetch(path, { ...options, headers });
   const body = (await response.json().catch(() => null)) as ApiResult<T> | null;
   if (!body) {
-    return { ok: false, error: { code: "BAD_RESPONSE", message: "Server response could not be read." } };
+    return { success: false, error: { code: "BAD_RESPONSE", message: "Server response could not be read." } };
   }
   return body;
 }
 
 export function DatingMvpApp() {
-  const [auth, setAuth] = useState<{ userId: number; authToken: string; email: string; displayName: string } | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-    const raw = window.localStorage.getItem(storageKey);
-    if (!raw) {
-      return null;
-    }
-    try {
-      const parsed = JSON.parse(raw) as { userId: number; authToken: string; email: string; displayName: string };
-      return parsed.authToken && parsed.userId ? parsed : null;
-    } catch {
-      window.localStorage.removeItem(storageKey);
-      return null;
-    }
-  });
+  const [auth, setAuth] = useState<{ userId: number; email: string; displayName: string } | null>(null);
   const [registerForm, setRegisterForm] = useState({ email: "", displayName: "", bio: "", city: "", interests: "", inviteCode: "" });
   const [loginForm, setLoginForm] = useState({ email: "", secret: "" });
   const [profileForm, setProfileForm] = useState({ displayName: "", avatarUrl: "/avatars/default.svg", bio: "", city: "", interests: "" });
@@ -91,15 +69,16 @@ export function DatingMvpApp() {
   const [isLiking, setIsLiking] = useState<number | null>(null);
   const [isLoadingChat, setIsLoadingChat] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   const selectedMatch = useMemo(() => matches.find((m) => m.matchId === selectedMatchId) || null, [matches, selectedMatchId]);
   const canLikeOthers = Boolean(currentProfile?.bio?.trim() && currentProfile?.avatarUrl?.trim());
 
-  const loadChat = useCallback(async (matchId: number, activeAuth: { userId: number; authToken: string }) => {
+  const loadChat = useCallback(async (matchId: number) => {
     setIsLoadingChat(true);
     try {
-      const res = await apiRequest<Message[]>(`/api/chats/${matchId}`, { method: "GET" }, activeAuth);
-      if (res.ok) {
+      const res = await apiRequest<Message[]>(`/api/chats/${matchId}`, { method: "GET" });
+      if (res.success) {
         setMessages(res.data || []);
       } else {
         setMessages([]);
@@ -110,18 +89,18 @@ export function DatingMvpApp() {
     }
   }, []);
 
-  const refreshMainData = useCallback(async (activeAuth: { userId: number; authToken: string }) => {
+  const refreshMainData = useCallback(async () => {
     setIsLoadingHome(true);
     setGlobalError("");
 
     try {
       const [profileRes, discoveryRes, matchesRes] = await Promise.all([
-        apiRequest<Profile>("/api/profile", { method: "GET" }, activeAuth),
-        apiRequest<DiscoveryProfile[]>("/api/discovery", { method: "GET" }, activeAuth),
-        apiRequest<Match[]>("/api/matches", { method: "GET" }, activeAuth),
+        apiRequest<Profile>("/api/profile", { method: "GET" }),
+        apiRequest<DiscoveryProfile[]>("/api/discovery", { method: "GET" }),
+        apiRequest<Match[]>("/api/matches", { method: "GET" }),
       ]);
 
-      if (!profileRes.ok) {
+      if (!profileRes.success) {
         setCurrentProfile(null);
         setGlobalError("Profil fehlt. Bitte vervollständige dein Profil.");
       } else {
@@ -135,17 +114,17 @@ export function DatingMvpApp() {
         });
       }
 
-      if (discoveryRes.ok) {
+      if (discoveryRes.success) {
         setDiscovery(discoveryRes.data || []);
       }
 
-      if (matchesRes.ok) {
+      if (matchesRes.success) {
         const nextMatches = matchesRes.data || [];
         setMatches(nextMatches);
         const nextSelectedMatchId = selectedMatchId || nextMatches[0]?.matchId || null;
         setSelectedMatchId(nextSelectedMatchId);
         if (nextSelectedMatchId) {
-          await loadChat(nextSelectedMatchId, activeAuth);
+          await loadChat(nextSelectedMatchId);
         } else {
           setMessages([]);
         }
@@ -154,6 +133,33 @@ export function DatingMvpApp() {
       setIsLoadingHome(false);
     }
   }, [loadChat, selectedMatchId]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function bootstrapSession() {
+      try {
+        const sessionRes = await apiRequest<{ userId: number; email: string; displayName: string }>("/api/auth/session", { method: "GET" });
+        if (!isMounted) return;
+        if (!sessionRes.success || !sessionRes.data) {
+          setAuth(null);
+          return;
+        }
+
+        setAuth(sessionRes.data);
+        await refreshMainData();
+      } finally {
+        if (isMounted) {
+          setIsCheckingSession(false);
+        }
+      }
+    }
+
+    void bootstrapSession();
+    return () => {
+      isMounted = false;
+    };
+  }, [refreshMainData]);
 
   async function handleRegister(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -168,7 +174,7 @@ export function DatingMvpApp() {
         body: JSON.stringify(registerForm),
       });
 
-      if (!res.ok) {
+      if (!res.success) {
         setGlobalError(mapErrorMessage(res.error, "Registrierung fehlgeschlagen."));
         return;
       }
@@ -189,19 +195,18 @@ export function DatingMvpApp() {
     setIsLoggingIn(true);
 
     try {
-      const res = await apiRequest<{ userId: number; authToken: string; email: string; displayName: string }>("/api/auth/login", {
+      const res = await apiRequest<{ userId: number; email: string; displayName: string }>("/api/auth/login", {
         method: "POST",
         body: JSON.stringify(loginForm),
       });
 
-      if (!res.ok || !res.data) {
+      if (!res.success || !res.data) {
         setGlobalError(mapErrorMessage(res.error, "Login fehlgeschlagen."));
         return;
       }
 
       setAuth(res.data);
-      window.localStorage.setItem(storageKey, JSON.stringify(res.data));
-      await refreshMainData(res.data);
+      await refreshMainData();
       setSuccessNote("Erfolgreich eingeloggt.");
     } finally {
       setIsLoggingIn(false);
@@ -223,10 +228,9 @@ export function DatingMvpApp() {
           method: "PATCH",
           body: JSON.stringify(profileForm),
         },
-        auth,
       );
 
-      if (!res.ok || !res.data) {
+      if (!res.success || !res.data) {
         setGlobalError("Profil konnte nicht gespeichert werden. Bitte erneut versuchen.");
         return;
       }
@@ -251,10 +255,9 @@ export function DatingMvpApp() {
           method: "POST",
           body: JSON.stringify({ targetProfileId: profileId }),
         },
-        auth,
       );
 
-      if (!res.ok) {
+      if (!res.success) {
         setGlobalError(mapErrorMessage(res.error, "Like konnte nicht gespeichert werden."));
         return;
       }
@@ -263,7 +266,7 @@ export function DatingMvpApp() {
         setSuccessNote("It’s a match! Ihr könnt jetzt chatten.");
       }
 
-      await refreshMainData(auth);
+      await refreshMainData();
     } finally {
       setIsLiking(null);
     }
@@ -284,29 +287,28 @@ export function DatingMvpApp() {
           method: "POST",
           body: JSON.stringify({ content: chatInput.trim() }),
         },
-        auth,
       );
 
-      if (!res.ok) {
+      if (!res.success) {
         setGlobalError(mapErrorMessage(res.error, "Nachricht konnte nicht gesendet werden."));
         return;
       }
 
       setChatInput("");
-      await loadChat(selectedMatchId, auth);
+      await loadChat(selectedMatchId);
     } finally {
       setIsSendingMessage(false);
     }
   }
 
-  function logout() {
+  async function logout() {
+    await apiRequest<{ loggedOut: boolean }>("/api/auth/logout", { method: "POST" });
     setAuth(null);
     setCurrentProfile(null);
     setDiscovery([]);
     setMatches([]);
     setMessages([]);
     setSelectedMatchId(null);
-    window.localStorage.removeItem(storageKey);
   }
 
   return (
@@ -326,7 +328,11 @@ export function DatingMvpApp() {
       {globalError ? <p className={styles.error}>{globalError}</p> : null}
       {successNote ? <p className={styles.success}>{successNote}</p> : null}
 
-      {!auth ? (
+      {isCheckingSession ? (
+        <section className={styles.card}>
+          <p className={styles.muted}>Checking session...</p>
+        </section>
+      ) : !auth ? (
         <section className={styles.authGrid}>
           <form onSubmit={handleRegister} className={styles.card}>
             <h2>Register</h2>
@@ -407,7 +413,7 @@ export function DatingMvpApp() {
                   onClick={async () => {
                     setSelectedMatchId(match.matchId);
                     if (auth) {
-                      await loadChat(match.matchId, auth);
+                      await loadChat(match.matchId);
                     }
                   }}
                 >

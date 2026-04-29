@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { fail, ok } from "@/lib/api-response";
-import { createUserAuthToken } from "@/lib/auth";
+import { AUTH_TOKEN_COOKIE_NAME, createUserAuthToken, getAuthCookieOptions } from "@/lib/auth";
 import { normalizeEmail, isValidEmail } from "@/lib/validation";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { log } from "@/lib/logger";
@@ -40,13 +40,13 @@ export async function POST(request: Request) {
   const auth = createUserAuthToken(user.id);
   log("info", "auth.login.success", { userId: user.id, email: user.email });
 
-  return ok({
+  const response = ok({
     userId: user.id,
     email: user.email,
     displayName: user.displayName,
     profile: user.profile,
-    authToken: auth.token,
     authTokenExpiresAt: auth.expiresAt,
-    tokenHint: "Use x-auth-token for authenticated MVP endpoints",
   });
+  response.cookies.set(AUTH_TOKEN_COOKIE_NAME, auth.token, getAuthCookieOptions());
+  return response;
 }

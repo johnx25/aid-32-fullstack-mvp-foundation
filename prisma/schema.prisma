@@ -12,7 +12,6 @@ model User {
   email       String    @unique
   secretHash  String
   displayName String
-  authSecretHash String    @default("")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   profile     Profile?

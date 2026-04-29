@@ -1,9 +1,3 @@
-/*
-  Warnings:
-
-  - Added the required column `secretHash` to the `User` table without a default value. This is not possible if the table is not empty.
-
-*/
 -- RedefineTables
 PRAGMA defer_foreign_keys=ON;
 PRAGMA foreign_keys=OFF;
@@ -15,7 +9,18 @@ CREATE TABLE "new_User" (
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
-INSERT INTO "new_User" ("createdAt", "displayName", "email", "id", "updatedAt") SELECT "createdAt", "displayName", "email", "id", "updatedAt" FROM "User";
+INSERT INTO "new_User" ("createdAt", "displayName", "email", "id", "secretHash", "updatedAt")
+SELECT
+    "createdAt",
+    "displayName",
+    "email",
+    "id",
+    CASE
+        WHEN length(trim(COALESCE("authSecretHash", ''))) > 0 THEN "authSecretHash"
+        ELSE lower(hex(randomblob(32)))
+    END,
+    "updatedAt"
+FROM "User";
 DROP TABLE "User";
 ALTER TABLE "new_User" RENAME TO "User";
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
