@@ -8,6 +8,10 @@ import { isValidEmail, normalizeEmail, sanitizeUserText } from "@/lib/validation
 import { hashSecret } from "@/lib/secret-hash";
 import { assertAuthConfig, AUTH_TOKEN_COOKIE_NAME, createUserAuthToken, getAuthCookieOptions } from "@/lib/auth";
 
+function asOptionalString(value: unknown) {
+  return typeof value === "string" ? value : undefined;
+}
+
 function generateSecret() {
   return randomBytes(18).toString("base64url");
 }
@@ -29,20 +33,34 @@ function isBetaInviteAccepted(inviteCode: string | undefined) {
 }
 
 export async function POST(request: Request) {
-  let body: { email?: string; displayName?: string; bio?: string; city?: string; interests?: string; inviteCode?: string };
+  let body: {
+    email?: unknown;
+    displayName?: unknown;
+    bio?: unknown;
+    city?: unknown;
+    interests?: unknown;
+    inviteCode?: unknown;
+  };
   try {
     body = (await request.json()) as typeof body;
   } catch {
     return fail(400, "BAD_REQUEST", "Invalid JSON body");
   }
 
-  const email = body.email ? normalizeEmail(body.email) : "";
-  const displayName = body.displayName ? sanitizeUserText(body.displayName, 80) : "";
-  const bio = body.bio ? sanitizeUserText(body.bio, 500) : "";
-  const city = body.city ? sanitizeUserText(body.city, 120) : "";
-  const interests = body.interests ? sanitizeUserText(body.interests, 500) : "";
+  const rawEmail = asOptionalString(body.email);
+  const rawDisplayName = asOptionalString(body.displayName);
+  const rawBio = asOptionalString(body.bio);
+  const rawCity = asOptionalString(body.city);
+  const rawInterests = asOptionalString(body.interests);
+  const rawInviteCode = asOptionalString(body.inviteCode);
 
-  if (!isBetaInviteAccepted(body.inviteCode)) {
+  const email = rawEmail ? normalizeEmail(rawEmail) : "";
+  const displayName = rawDisplayName ? sanitizeUserText(rawDisplayName, 80) : "";
+  const bio = rawBio ? sanitizeUserText(rawBio, 500) : "";
+  const city = rawCity ? sanitizeUserText(rawCity, 120) : "";
+  const interests = rawInterests ? sanitizeUserText(rawInterests, 500) : "";
+
+  if (!isBetaInviteAccepted(rawInviteCode)) {
     return fail(403, "FORBIDDEN", "Beta mode is enabled. A valid invite code is required.");
   }
 
