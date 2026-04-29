@@ -5,15 +5,10 @@ const AUTH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 function getAuthTokenSigningKey() {
   const configured = process.env.AUTH_TOKEN_SECRET || process.env.NEXTAUTH_SECRET;
-  if (configured) {
+  if (configured && configured.trim().length >= 32) {
     return configured;
   }
-
-  if (process.env.NODE_ENV === "development") {
-    console.warn("[auth] Using development fallback for AUTH_TOKEN_SECRET");
-    return "local-dev-auth-token-secret";
-  }
-
+  console.error("[auth] AUTH_TOKEN_SECRET (or NEXTAUTH_SECRET) must be set and at least 32 chars");
   throw new Error("AUTH_CONFIG_MISSING");
 }
 

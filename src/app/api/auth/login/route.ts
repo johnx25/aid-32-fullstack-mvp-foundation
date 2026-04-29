@@ -1,14 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { fail, ok } from "@/lib/api-response";
 import { createUserAuthToken } from "@/lib/auth";
-import { createHash } from "crypto";
 import { normalizeEmail, isValidEmail } from "@/lib/validation";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { log } from "@/lib/logger";
-
-function hashSecret(secret: string) {
-  return createHash("sha256").update(secret).digest("hex");
-}
+import { hashSecret, isLegacySecretHash, verifySecret } from "@/lib/secret-hash";
 
 export async function POST(request: Request) {
   let body: { email?: string; secret?: string };
@@ -30,12 +26,19 @@ export async function POST(request: Request) {
   }
 
   const user = await prisma.user.findUnique({ where: { email }, include: { profile: true } });
-  if (!user || user.secretHash !== hashSecret(secret)) {
+  if (!user || !verifySecret(secret, user.secretHash)) {
     log("warn", "auth.login.failed", { email });
     return fail(401, "UNAUTHORIZED", "Invalid credentials");
   }
+  if (isLegacySecretHash(user.secretHash)) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { secretHash: hashSecret(secret) },
+    });
+  }
 
   const auth = createUserAuthToken(user.id);
+  log("info", "auth.login.success", { userId: user.id, email: user.email });
 
   return ok({
     userId: user.id,

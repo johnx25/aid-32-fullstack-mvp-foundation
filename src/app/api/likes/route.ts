@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUserId } from "@/lib/auth";
 import { fail, ok } from "@/lib/api-response";
-import { validatePositiveInt } from "@/lib/validation";
+import { hasMinimumProfileQuality, validatePositiveInt } from "@/lib/validation";
 import { log } from "@/lib/logger";
 
 export async function POST(request: Request) {
@@ -34,6 +34,10 @@ export async function POST(request: Request) {
     const ownProfile = await prisma.profile.findUnique({ where: { userId: currentUserId } });
     if (!ownProfile) {
       return fail(404, "NOT_FOUND", "Current user profile not found");
+    }
+
+    if (!hasMinimumProfileQuality(ownProfile)) {
+      return fail(403, "FORBIDDEN", "Complete your profile first (avatar + bio) before liking others.");
     }
 
     await prisma.like.upsert({
