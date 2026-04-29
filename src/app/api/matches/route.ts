@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUserId } from "@/lib/auth";
 import { fail, ok } from "@/lib/api-response";
+import { DEFAULT_AVATAR_URL } from "@/lib/validation";
 
 export async function GET() {
   try {
@@ -28,6 +29,7 @@ export async function GET() {
           profile: other.profile
             ? {
                 profileId: other.profile.id,
+                avatarUrl: other.profile.avatarUrl || DEFAULT_AVATAR_URL,
                 bio: other.profile.bio,
                 city: other.profile.city,
                 interests: other.profile.interests,

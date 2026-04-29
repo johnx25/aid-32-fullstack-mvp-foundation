@@ -20,7 +20,7 @@ export async function GET() {
       userId: profile.userId,
       email: profile.user.email,
       displayName: profile.user.displayName,
-      avatarUrl: profile.avatarUrl,
+      avatarUrl: profile.avatarUrl || DEFAULT_AVATAR_URL,
       bio: profile.bio,
       city: profile.city,
       interests: profile.interests,
