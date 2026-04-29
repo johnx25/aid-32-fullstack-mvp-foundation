@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUserId } from "@/lib/auth";
 import { fail, ok } from "@/lib/api-response";
+import { validatePositiveInt } from "@/lib/validation";
+import { log } from "@/lib/logger";
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +14,7 @@ export async function POST(request: Request) {
       return fail(400, "BAD_REQUEST", "Invalid JSON body");
     }
 
-    if (!body.targetProfileId || !Number.isInteger(body.targetProfileId)) {
+    if (!validatePositiveInt(body.targetProfileId)) {
       return fail(400, "BAD_REQUEST", "targetProfileId is required");
     }
 
@@ -65,7 +67,7 @@ export async function POST(request: Request) {
       });
       isMatch = true;
       matchId = match.id;
-      console.info(`[match] Match ensured between user ${userAId} and user ${userBId} (matchId=${match.id})`);
+      log("info", "match.created_or_found", { userAId, userBId, matchId: match.id });
     }
 
     return ok({ likedUserId: targetProfile.userId, isMatch, matchId }, 201);

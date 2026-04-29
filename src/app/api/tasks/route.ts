@@ -1,12 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { fail, ok } from "@/lib/api-response";
+import { sanitizeUserText } from "@/lib/validation";
+import { log } from "@/lib/logger";
 
 export async function GET() {
-  const tasks = await prisma.task.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  try {
+    const tasks = await prisma.task.findMany({
+      orderBy: { createdAt: "desc" },
+    });
 
-  return ok(tasks);
+    return ok(tasks);
+  } catch (error) {
+    log("error", "tasks.list.error", { reason: error instanceof Error ? error.message : "unknown" });
+    return fail(500, "INTERNAL_ERROR", "Internal server error");
+  }
 }
 
 export async function POST(request: Request) {
@@ -20,17 +27,22 @@ export async function POST(request: Request) {
     return fail(400, "BAD_REQUEST", "Invalid JSON body");
   }
 
-  const title = body.title?.trim();
+  const title = body.title ? sanitizeUserText(body.title, 160) : "";
   if (!title) {
     return fail(400, "BAD_REQUEST", "Title is required");
   }
 
-  const task = await prisma.task.create({
-    data: {
-      title,
-      description: body.description?.trim() || null,
-    },
-  });
+  try {
+    const task = await prisma.task.create({
+      data: {
+        title,
+        description: body.description ? sanitizeUserText(body.description, 2000) : null,
+      },
+    });
 
-  return ok(task, 201);
+    return ok(task, 201);
+  } catch (error) {
+    log("error", "tasks.create.error", { reason: error instanceof Error ? error.message : "unknown" });
+    return fail(500, "INTERNAL_ERROR", "Internal server error");
+  }
 }
