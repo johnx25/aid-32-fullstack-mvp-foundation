@@ -10,10 +10,15 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as {
+  let body: {
     title?: string;
     description?: string;
   };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
   const title = body.title?.trim();
   if (!title) {
