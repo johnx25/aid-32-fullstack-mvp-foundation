@@ -83,7 +83,7 @@ export async function POST(request: Request) {
         displayName: user.displayName,
         profile: user.profile,
         secret,
-        authTokenExpiresAt: auth.expiresAt,
+        authTokenExpiresAt: new Date(auth.expiresAt * 1000).toISOString(),
       },
       201,
     );

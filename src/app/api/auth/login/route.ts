@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       email: user.email,
       displayName: user.displayName,
       profile: user.profile,
-      authTokenExpiresAt: auth.expiresAt,
+      authTokenExpiresAt: new Date(auth.expiresAt * 1000).toISOString(),
     });
     response.cookies.set(AUTH_TOKEN_COOKIE_NAME, auth.token, getAuthCookieOptions());
     return response;
