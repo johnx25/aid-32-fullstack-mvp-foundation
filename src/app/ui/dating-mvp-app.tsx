@@ -181,6 +181,7 @@ export function DatingMvpApp() {
 
       setRegisterSecret(res.data?.secret || "");
       setLoginForm((prev) => ({ ...prev, email: registerForm.email, secret: res.data?.secret || "" }));
+      setRegisterForm({ email: "", displayName: "", bio: "", city: "", interests: "", inviteCode: "" });
       setSuccessNote("Konto erstellt. Secret sicher speichern und für den Login verwenden.");
     } finally {
       setIsRegistering(false);

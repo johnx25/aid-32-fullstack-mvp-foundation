@@ -67,6 +67,8 @@ export default function RegisterPage() {
       }
 
       setResult(payload.data);
+      setEmail("");
+      setDisplayName("");
       setSecret("");
     } catch {
       setError("Unexpected network error. Please try again.");
