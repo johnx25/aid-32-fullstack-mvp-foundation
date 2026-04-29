@@ -3,7 +3,7 @@
 This repository provides a practical full-stack MVP baseline:
 
 - Next.js (App Router, TypeScript)
-- Prisma ORM + SQLite
+- Prisma ORM + PostgreSQL (Supabase-compatible)
 - Task API + starter UI
 - Auth + Profile + Discovery + Swipe/Match + Chat APIs
 
@@ -20,6 +20,28 @@ npm run dev -- -p 3200
 Open `http://localhost:3200`.
 
 Set `AUTH_TOKEN_SECRET` in `.env` to a random string with at least 32 characters.
+
+## Database setup for local test path (AID-59)
+
+This repo now targets PostgreSQL for local/test and Supabase connectivity.
+
+1. Configure `.env`:
+- `DATABASE_URL` should point to either:
+  - local PostgreSQL (example): `postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public`
+  - Supabase pooled URL (transaction mode)
+- Optional `DIRECT_URL` can be set to a direct PostgreSQL connection URL when your environment requires it.
+
+2. Apply migrations:
+```bash
+npm run prisma:migrate
+```
+
+3. Seed demo users (optional):
+```bash
+SEED_MODE=demo npm run prisma:seed
+```
+
+If Supabase secrets are unavailable, use any local PostgreSQL instance with the sample `DATABASE_URL` above for reproducible validation.
 
 ## Migration safety
 
