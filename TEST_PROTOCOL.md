@@ -24,6 +24,7 @@ Date: 2026-04-29 (UTC)
 
 4. Missing auth edge case
 - `GET /api/profile` without auth cookie -> `401 UNAUTHORIZED`
+- `GET /api/profile` with invalid auth cookie but valid legacy auth headers -> `200` (fallback still accepted during migration)
 
 5. Discovery and likes
 - `GET /api/discovery` returns other profiles

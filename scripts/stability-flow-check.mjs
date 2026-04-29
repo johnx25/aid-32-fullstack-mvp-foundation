@@ -139,6 +139,13 @@ async function main() {
     headers: legacyAuthHeaders(loginA.body.data.userId, authToken),
   });
   assert(profileA.status === 200, "profile A failed");
+  const profileAWithInvalidCookie = await call("/api/profile", {
+    headers: {
+      ...legacyAuthHeaders(loginA.body.data.userId, authToken),
+      cookie: "aid32_auth_token=invalid.token.signature",
+    },
+  });
+  assert(profileAWithInvalidCookie.status === 200, "legacy header fallback should work with invalid cookie present");
 
   const discoveryA = await call("/api/discovery", {
     headers: legacyAuthHeaders(loginA.body.data.userId, authToken),
