@@ -8,6 +8,7 @@ type Profile = {
   userId: number;
   email?: string;
   displayName: string;
+  avatarUrl: string;
   bio: string | null;
   city: string | null;
   interests: string | null;
@@ -25,6 +26,7 @@ function mapErrorMessage(error: ApiResult<unknown>["error"], fallback: string) {
   if (!error) return fallback;
   if (error.code === "UNAUTHORIZED") return "Login fehlgeschlagen: Bitte Secret prüfen.";
   if (error.code === "CONFLICT") return "Diese E-Mail ist bereits registriert.";
+  if (error.code === "PROFILE_INCOMPLETE") return "Bitte Profil vervollständigen (Avatar + Bio), bevor du likest.";
   return error.message || fallback;
 }
 
@@ -65,9 +67,9 @@ export function DatingMvpApp() {
       return null;
     }
   });
-  const [registerForm, setRegisterForm] = useState({ email: "", displayName: "", bio: "", city: "", interests: "" });
+  const [registerForm, setRegisterForm] = useState({ email: "", displayName: "", bio: "", city: "", interests: "", inviteCode: "" });
   const [loginForm, setLoginForm] = useState({ email: "", secret: "" });
-  const [profileForm, setProfileForm] = useState({ displayName: "", bio: "", city: "", interests: "" });
+  const [profileForm, setProfileForm] = useState({ displayName: "", avatarUrl: "/avatars/default.svg", bio: "", city: "", interests: "" });
 
   const [registerSecret, setRegisterSecret] = useState<string>("");
   const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null);
@@ -90,6 +92,7 @@ export function DatingMvpApp() {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
 
   const selectedMatch = useMemo(() => matches.find((m) => m.matchId === selectedMatchId) || null, [matches, selectedMatchId]);
+  const canLikeOthers = Boolean(currentProfile?.bio?.trim() && currentProfile?.avatarUrl?.trim());
 
   const loadChat = useCallback(async (matchId: number, activeAuth: { userId: number; authToken: string }) => {
     setIsLoadingChat(true);
@@ -124,6 +127,7 @@ export function DatingMvpApp() {
         setCurrentProfile(profileRes.data || null);
         setProfileForm({
           displayName: profileRes.data?.displayName || "",
+          avatarUrl: profileRes.data?.avatarUrl || "/avatars/default.svg",
           bio: profileRes.data?.bio || "",
           city: profileRes.data?.city || "",
           interests: profileRes.data?.interests || "",
@@ -250,7 +254,7 @@ export function DatingMvpApp() {
       );
 
       if (!res.ok) {
-        setGlobalError("Like konnte nicht gespeichert werden.");
+        setGlobalError(mapErrorMessage(res.error, "Like konnte nicht gespeichert werden."));
         return;
       }
 
@@ -283,7 +287,7 @@ export function DatingMvpApp() {
       );
 
       if (!res.ok) {
-        setGlobalError("Nachricht konnte nicht gesendet werden.");
+        setGlobalError(mapErrorMessage(res.error, "Nachricht konnte nicht gesendet werden."));
         return;
       }
 
@@ -308,8 +312,8 @@ export function DatingMvpApp() {
     <main className={styles.page}>
       <header className={styles.header}>
         <div>
-          <h1>AID-32 Dating MVP</h1>
-          <p>Demo-ready flow: Register, Login, Profile, Discovery, Match, Chat</p>
+          <h1>AID-32 Dating MVP (Beta)</h1>
+          <p>Willkommen. Ablauf: Registrieren, Profil vervollständigen, entdecken, matchen, chatten.</p>
         </div>
         {auth ? (
           <button className={styles.secondaryButton} onClick={logout} type="button">
@@ -325,8 +329,10 @@ export function DatingMvpApp() {
         <section className={styles.authGrid}>
           <form onSubmit={handleRegister} className={styles.card}>
             <h2>Register</h2>
+            <p className={styles.help}>Onboarding Schritt 1: Konto erstellen. Schritt 2: Profil vervollständigen.</p>
             <input placeholder="Email" value={registerForm.email} onChange={(e) => setRegisterForm((p) => ({ ...p, email: e.target.value }))} required />
             <input placeholder="Display Name" value={registerForm.displayName} onChange={(e) => setRegisterForm((p) => ({ ...p, displayName: e.target.value }))} required />
+            <input placeholder="Invite Code (wenn Beta aktiv)" value={registerForm.inviteCode} onChange={(e) => setRegisterForm((p) => ({ ...p, inviteCode: e.target.value }))} />
             <input placeholder="City" value={registerForm.city} onChange={(e) => setRegisterForm((p) => ({ ...p, city: e.target.value }))} />
             <textarea placeholder="Bio" rows={3} value={registerForm.bio} onChange={(e) => setRegisterForm((p) => ({ ...p, bio: e.target.value }))} />
             <input placeholder="Interests (comma separated)" value={registerForm.interests} onChange={(e) => setRegisterForm((p) => ({ ...p, interests: e.target.value }))} />
@@ -354,6 +360,7 @@ export function DatingMvpApp() {
             {!currentProfile && !isLoadingHome ? <p className={styles.empty}>Profile missing. Please save your profile to continue.</p> : null}
             <form onSubmit={handleSaveProfile}>
               <input value={profileForm.displayName} onChange={(e) => setProfileForm((p) => ({ ...p, displayName: e.target.value }))} placeholder="Display name" required />
+              <input value={profileForm.avatarUrl} onChange={(e) => setProfileForm((p) => ({ ...p, avatarUrl: e.target.value }))} placeholder="Avatar URL" required />
               <input value={profileForm.city} onChange={(e) => setProfileForm((p) => ({ ...p, city: e.target.value }))} placeholder="City" />
               <textarea value={profileForm.bio} onChange={(e) => setProfileForm((p) => ({ ...p, bio: e.target.value }))} rows={3} placeholder="Bio" />
               <input value={profileForm.interests} onChange={(e) => setProfileForm((p) => ({ ...p, interests: e.target.value }))} placeholder="Interests" />
@@ -361,6 +368,7 @@ export function DatingMvpApp() {
                 {isSavingProfile ? "Saving..." : "Save profile"}
               </button>
             </form>
+            {!canLikeOthers ? <p className={styles.help}>Bitte mindestens Avatar und Bio setzen, bevor du andere likest.</p> : null}
           </article>
 
           <article className={styles.card}>
@@ -376,7 +384,7 @@ export function DatingMvpApp() {
                   <p className={styles.muted}>{profile.interests || "No interests yet"}</p>
                   <div className={styles.row}>
                     <button className={styles.secondaryButton} type="button">Dislike</button>
-                    <button className={styles.primaryButton} type="button" disabled={Boolean(isLiking)} onClick={() => handleLike(profile.profileId)}>
+                    <button className={styles.primaryButton} type="button" disabled={Boolean(isLiking) || !canLikeOthers} onClick={() => handleLike(profile.profileId)}>
                       {isLiking === profile.profileId ? "Liking..." : profile.likedByCurrentUser ? "Liked" : "Like"}
                     </button>
                   </div>
@@ -423,7 +431,7 @@ export function DatingMvpApp() {
               ))}
             </div>
             <form className={styles.row} onSubmit={handleSendMessage}>
-              <input value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Type a message" disabled={!selectedMatch || isSendingMessage} />
+              <input value={chatInput} maxLength={500} onChange={(e) => setChatInput(e.target.value)} placeholder="Type a message" disabled={!selectedMatch || isSendingMessage} />
               <button className={styles.primaryButton} disabled={!selectedMatch || isSendingMessage} type="submit">
                 {isSendingMessage ? "Sending..." : "Send"}
               </button>

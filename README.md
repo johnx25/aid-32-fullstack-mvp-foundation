@@ -18,6 +18,14 @@ npm run dev -- -p 3200
 
 Open `http://localhost:3200`.
 
+## Beta launch controls
+
+Use these env vars in `.env`:
+
+- `BETA_MODE=true|false`
+- `BETA_INVITE_CODES=code1,code2`
+- `SEED_MODE=real|demo` (`real` skips fake users, `demo` loads test users)
+
 ## Auth skeleton
 
 Current MVP auth uses registration secrets with hashed storage:
@@ -45,8 +53,16 @@ Current MVP auth uses registration secrets with hashed storage:
 ## Data model
 
 - `User`
-- `Profile`
+- `Profile` (with `avatarUrl`)
 - `Like` (unique per user pair)
 - `Match` (created on reciprocal likes)
 - `Message` (chat messages scoped to a match)
 - `Task`
+
+## Manual beta test checklist
+
+- New user can sign up
+- User is guided to complete profile
+- User cannot like others with incomplete profile
+- Matching works
+- Chat works with empty-message rejection and cooldown

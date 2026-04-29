@@ -26,6 +26,7 @@ model User {
 model Profile {
   id         Int      @id @default(autoincrement())
   userId     Int      @unique
+  avatarUrl  String   @default("/avatars/default.svg")
   bio        String
   city       String
   interests  String

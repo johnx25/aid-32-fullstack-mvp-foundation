@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUserId } from "@/lib/auth";
 import { fail, ok } from "@/lib/api-response";
+import { log } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -18,6 +19,7 @@ export async function GET() {
       select: { toUserId: true },
     });
     const likedUserIds = new Set(sentLikes.map((l) => l.toUserId));
+    log("info", "discovery.viewed", { currentUserId, resultCount: profiles.length });
 
     return ok(
       profiles.map((p) => ({
