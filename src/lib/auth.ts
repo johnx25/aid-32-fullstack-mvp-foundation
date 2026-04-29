@@ -4,7 +4,17 @@ import { createHmac, timingSafeEqual } from "crypto";
 const AUTH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 function getAuthTokenSigningKey() {
-  return process.env.AUTH_TOKEN_SECRET || process.env.NEXTAUTH_SECRET || "local-dev-auth-token-secret";
+  const configured = process.env.AUTH_TOKEN_SECRET || process.env.NEXTAUTH_SECRET;
+  if (configured) {
+    return configured;
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.warn("[auth] Using development fallback for AUTH_TOKEN_SECRET");
+    return "local-dev-auth-token-secret";
+  }
+
+  throw new Error("AUTH_CONFIG_MISSING");
 }
 
 function createAuthTokenSignature(payload: string) {
@@ -22,7 +32,12 @@ export function createUserAuthToken(userId: number) {
 }
 
 function verifyUserAuthToken(token: string): number | null {
-  const [rawUserId, rawExpiresAt, signature] = token.split(".");
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  const [rawUserId, rawExpiresAt, signature] = parts;
   if (!rawUserId || !rawExpiresAt || !signature) {
     return null;
   }
