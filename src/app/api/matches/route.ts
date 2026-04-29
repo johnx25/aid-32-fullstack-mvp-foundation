@@ -12,8 +12,8 @@ export async function GET() {
         OR: [{ userAId: currentUserId }, { userBId: currentUserId }],
       },
       include: {
-        userA: { include: { profile: true } },
-        userB: { include: { profile: true } },
+        userA: { select: { id: true, displayName: true, profile: true } },
+        userB: { select: { id: true, displayName: true, profile: true } },
       },
       orderBy: { createdAt: "desc" },
     });

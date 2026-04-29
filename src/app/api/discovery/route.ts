@@ -10,7 +10,7 @@ export async function GET() {
 
     const profiles = await prisma.profile.findMany({
       where: { userId: { not: currentUserId } },
-      include: { user: true },
+      include: { user: { select: { displayName: true } } },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
