@@ -6,6 +6,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { log } from "@/lib/logger";
 import { isValidEmail, normalizeEmail, sanitizeUserText } from "@/lib/validation";
 import { hashSecret } from "@/lib/secret-hash";
+import { AUTH_TOKEN_COOKIE_NAME, createUserAuthToken, getAuthCookieOptions } from "@/lib/auth";
 
 function generateSecret() {
   return randomBytes(18).toString("base64url");
@@ -72,19 +73,28 @@ export async function POST(request: Request) {
       include: { profile: true },
     });
 
+    const auth = createUserAuthToken(user.id);
     log("info", "auth.register.success", { userId: user.id, email: user.email });
 
-    return ok(
+    const response = ok(
       {
         userId: user.id,
         email: user.email,
         displayName: user.displayName,
         profile: user.profile,
         secret,
+        authTokenExpiresAt: auth.expiresAt,
       },
       201,
     );
+    response.cookies.set(AUTH_TOKEN_COOKIE_NAME, auth.token, getAuthCookieOptions());
+    return response;
   } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_CONFIG_MISSING") {
+      log("error", "auth.register.config_missing", {});
+      return fail(500, "INTERNAL_ERROR", "Auth configuration is missing");
+    }
+
     log("error", "auth.register.error", {
       reason: error instanceof Error ? error.message : "unknown",
     });
