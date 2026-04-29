@@ -34,6 +34,7 @@ export function RegisterPage() {
   const [sessionCheckError, setSessionCheckError] = useState("");
   const [successNote, setSuccessNote] = useState("");
   const [registerSecret, setRegisterSecret] = useState("");
+  const [postRegisterRedirectTo, setPostRegisterRedirectTo] = useState("");
 
   const [registerForm, setRegisterForm] = useState({
     email: "",
@@ -81,6 +82,7 @@ export function RegisterPage() {
     setError("");
     setSuccessNote("");
     setRegisterSecret("");
+    setPostRegisterRedirectTo("");
     setIsRegistering(true);
 
     try {
@@ -121,11 +123,16 @@ export function RegisterPage() {
         inviteCode: nextRegisterForm.inviteCode,
       }));
       setRegisterSecret(res.data.secret);
-      setSuccessNote("Account created. Save your one-time secret. You are signed in and can continue.");
-      router.replace(res.data.redirectTo);
+      setPostRegisterRedirectTo(res.data.redirectTo);
+      setSuccessNote("Account created. Save your one-time secret, then continue.");
     } finally {
       setIsRegistering(false);
     }
+  }
+
+  function handleContinueAfterSecret() {
+    if (!postRegisterRedirectTo) return;
+    router.replace(postRegisterRedirectTo);
   }
 
   return (
@@ -206,9 +213,14 @@ export function RegisterPage() {
         </form>
 
         {registerSecret ? (
-          <p className={styles.secret}>
-            One-time secret: <code>{registerSecret}</code>
-          </p>
+          <>
+            <p className={styles.secret}>
+              One-time secret: <code>{registerSecret}</code>
+            </p>
+            <button type="button" onClick={handleContinueAfterSecret} disabled={!postRegisterRedirectTo}>
+              I have saved my secret
+            </button>
+          </>
         ) : null}
 
         <p className={styles.switch}>

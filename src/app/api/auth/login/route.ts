@@ -6,17 +6,24 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { log } from "@/lib/logger";
 import { hashSecret, isLegacySecretHash, verifySecret } from "@/lib/secret-hash";
 
+function asOptionalString(value: unknown) {
+  return typeof value === "string" ? value : undefined;
+}
+
 export async function POST(request: Request) {
   try {
-    let body: { email?: string; secret?: string };
+    let body: { email?: unknown; secret?: unknown };
     try {
-      body = (await request.json()) as { email?: string; secret?: string };
+      body = (await request.json()) as { email?: unknown; secret?: unknown };
     } catch {
       return fail(400, "BAD_REQUEST", "Invalid JSON body");
     }
 
-    const email = body.email ? normalizeEmail(body.email) : "";
-    const secret = body.secret?.trim();
+    const rawEmail = asOptionalString(body.email);
+    const rawSecret = asOptionalString(body.secret);
+
+    const email = rawEmail ? normalizeEmail(rawEmail) : "";
+    const secret = rawSecret?.trim();
     if (!email || !secret || !isValidEmail(email) || secret.length < 8 || secret.length > 128) {
       return fail(400, "BAD_REQUEST", "email and secret are required");
     }
