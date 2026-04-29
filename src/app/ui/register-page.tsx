@@ -12,6 +12,8 @@ type RegisterResponseData = {
   email: string;
   displayName: string;
   secret: string;
+  authTokenExpiresAt: string;
+  redirectTo: string;
 };
 
 function normalizeEmailInput(email: string) {
@@ -39,6 +41,8 @@ function normalizeRegisterInput(input: {
 function isValidRegisterResponseData(data: unknown): data is RegisterResponseData {
   if (!data || typeof data !== "object") return false;
   const value = data as Partial<RegisterResponseData>;
+  const authTokenExpiresAt =
+    typeof value.authTokenExpiresAt === "string" ? Date.parse(value.authTokenExpiresAt) : Number.NaN;
   return (
     typeof value.userId === "number" &&
     Number.isFinite(value.userId) &&
@@ -48,7 +52,10 @@ function isValidRegisterResponseData(data: unknown): data is RegisterResponseDat
     typeof value.displayName === "string" &&
     value.displayName.length > 0 &&
     typeof value.secret === "string" &&
-    value.secret.trim().length > 0
+    value.secret.trim().length > 0 &&
+    Number.isFinite(authTokenExpiresAt) &&
+    typeof value.redirectTo === "string" &&
+    value.redirectTo.length > 0
   );
 }
 
@@ -169,7 +176,8 @@ export function RegisterPage() {
         inviteCode: nextRegisterForm.inviteCode,
       }));
       setRegisterSecret(res.data.secret);
-      setSuccessNote("Account created. Save your one-time secret. You will use it on the login page.");
+      setSuccessNote("Account created. Save your one-time secret. You are signed in and can continue.");
+      router.replace(res.data.redirectTo);
     } finally {
       setIsRegistering(false);
     }
