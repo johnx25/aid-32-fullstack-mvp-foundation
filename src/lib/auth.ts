@@ -14,6 +14,10 @@ function getAuthTokenSigningKey() {
   throw new Error("AUTH_CONFIG_MISSING");
 }
 
+export function assertAuthConfig() {
+  void getAuthTokenSigningKey();
+}
+
 function createAuthTokenSignature(payload: string) {
   return createHmac("sha256", getAuthTokenSigningKey()).update(payload).digest("hex");
 }

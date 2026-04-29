@@ -2,11 +2,11 @@
 
 Date: 2026-04-29 (UTC)
 
-## Forward-safe migration strategy
+## Migration strategy
 
-- Legacy SQLite migration history remains untouched in `prisma/migrations/`.
-- PostgreSQL/Supabase path is isolated in `prisma/migrations_postgres/` and is now the configured migrations path.
-- Rationale: avoids rewriting semantics/checksums of previously applied migrations while enabling deterministic PostgreSQL bootstrap via `migrate deploy`.
+- PostgreSQL/Supabase migrations are consolidated in `prisma/migrations_postgres/`.
+- The legacy SQLite migration path is removed to avoid dual-provider ambiguity during deploy and onboarding.
+- Deterministic bootstrap remains `prisma migrate deploy` against an empty PostgreSQL-compatible database.
 
 ## Required environment
 

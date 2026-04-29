@@ -45,9 +45,8 @@ If Supabase secrets are unavailable, use any local PostgreSQL instance with the 
 
 ## Migration safety
 
-- Legacy SQLite migration history under `prisma/migrations/` is preserved unchanged.
-- PostgreSQL/Supabase test path uses isolated baseline migrations under `prisma/migrations_postgres/` (configured via `prisma.config.ts`).
-- This avoids rewriting previously applied migration semantics/checksums while providing a clean `migrate deploy` path for new PostgreSQL databases.
+- PostgreSQL/Supabase migrations are consolidated under `prisma/migrations_postgres/` (configured via `prisma.config.ts`).
+- The repository no longer maintains a parallel SQLite migration path, reducing deploy/onboarding ambiguity.
 - Safe execution path for this repo stage: start with an empty PostgreSQL database, run `npm run prisma:migrate:deploy`, then seed if needed.
 
 ## Beta launch controls

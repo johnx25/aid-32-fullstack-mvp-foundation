@@ -6,7 +6,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { log } from "@/lib/logger";
 import { isValidEmail, normalizeEmail, sanitizeUserText } from "@/lib/validation";
 import { hashSecret } from "@/lib/secret-hash";
-import { AUTH_TOKEN_COOKIE_NAME, createUserAuthToken, getAuthCookieOptions } from "@/lib/auth";
+import { assertAuthConfig, AUTH_TOKEN_COOKIE_NAME, createUserAuthToken, getAuthCookieOptions } from "@/lib/auth";
 
 function generateSecret() {
   return randomBytes(18).toString("base64url");
@@ -55,6 +55,8 @@ export async function POST(request: Request) {
   }
 
   try {
+    assertAuthConfig();
+
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return fail(409, "CONFLICT", "A user with this email already exists");
