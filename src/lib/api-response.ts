@@ -9,9 +9,9 @@ export type ApiErrorCode =
   | "INTERNAL_ERROR";
 
 export function ok<T>(data: T, status = 200) {
-  return NextResponse.json({ data, error: null }, { status });
+  return NextResponse.json({ success: true, data, error: null }, { status });
 }
 
 export function fail(status: number, code: ApiErrorCode, message: string) {
-  return NextResponse.json({ data: null, error: { code, message } }, { status });
+  return NextResponse.json({ success: false, data: null, error: { code, message } }, { status });
 }

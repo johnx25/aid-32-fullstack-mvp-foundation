@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentUserId } from "@/lib/auth";
 import { fail, ok } from "@/lib/api-response";
 import { Prisma } from "@prisma/client";
+import { sanitizeUserText } from "@/lib/validation";
+import { log } from "@/lib/logger";
 
 function parseMatchId(value: string): number | null {
   const id = Number(value);
@@ -78,7 +80,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
       return fail(400, "BAD_REQUEST", "Invalid JSON body");
     }
 
-    const content = body.content?.trim();
+    const content = body.content ? sanitizeUserText(body.content, 1000) : "";
     if (!content) {
       return fail(400, "BAD_REQUEST", "content is required");
     }
@@ -102,7 +104,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
       });
     });
 
-    console.info(`[chat] Message created in match ${matchId} by user ${currentUserId} (messageId=${message.id})`);
+    log("info", "chat.message.created", { matchId, currentUserId, messageId: message.id });
 
     return ok(
       {

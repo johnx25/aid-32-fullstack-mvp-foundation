@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUserId } from "@/lib/auth";
 import { fail, ok } from "@/lib/api-response";
+import { sanitizeUserText } from "@/lib/validation";
 
 export async function GET() {
   try {
@@ -47,12 +48,12 @@ export async function PATCH(request: Request) {
       return fail(404, "NOT_FOUND", "Profile not found");
     }
 
-    const displayName = body.displayName?.trim();
-    const bio = body.bio?.trim();
-    const city = body.city?.trim();
-    const interests = body.interests?.trim();
+    const displayName = body.displayName ? sanitizeUserText(body.displayName, 80) : undefined;
+    const bio = body.bio ? sanitizeUserText(body.bio, 500) : undefined;
+    const city = body.city ? sanitizeUserText(body.city, 120) : undefined;
+    const interests = body.interests ? sanitizeUserText(body.interests, 500) : undefined;
 
-    if (displayName) {
+    if (displayName && displayName.length >= 2) {
       await prisma.user.update({ where: { id: currentUserId }, data: { displayName } });
     }
 
