@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCurrentUserId } from "@/lib/auth";
 import { fail, ok } from "@/lib/api-response";
 import { log } from "@/lib/logger";
+import { DEFAULT_AVATAR_URL } from "@/lib/validation";
 
 export async function GET() {
   try {
@@ -9,7 +10,7 @@ export async function GET() {
 
     const profiles = await prisma.profile.findMany({
       where: { userId: { not: currentUserId } },
-      include: { user: true },
+      include: { user: { select: { displayName: true } } },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
@@ -26,7 +27,7 @@ export async function GET() {
         profileId: p.id,
         userId: p.userId,
         displayName: p.user.displayName,
-        avatarUrl: p.avatarUrl,
+        avatarUrl: p.avatarUrl || DEFAULT_AVATAR_URL,
         bio: p.bio,
         city: p.city,
         interests: p.interests,

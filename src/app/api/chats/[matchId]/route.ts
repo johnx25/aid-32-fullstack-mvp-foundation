@@ -41,7 +41,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mat
 
     const messages = await prisma.message.findMany({
       where: { matchId },
-      include: { sender: true },
+      include: { sender: { select: { displayName: true } } },
       orderBy: { createdAt: "asc" },
       take: 200,
     });
@@ -106,7 +106,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
           senderId: currentUserId,
           content,
         },
-        include: { sender: true },
+        include: { sender: { select: { displayName: true } } },
       });
     });
 

@@ -259,116 +259,131 @@ export function DatingMvpApp() {
 
   return (
     <main className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <h1>AID-32 Dating MVP (Beta)</h1>
-          <p>Willkommen. Ablauf: Registrieren, Profil vervollständigen, entdecken, matchen, chatten.</p>
-        </div>
-        {auth ? (
-          <button className={styles.secondaryButton} onClick={logout} type="button">
-            Logout
-          </button>
-        ) : null}
-      </header>
-
-      {globalError ? <p className={styles.error}>{globalError}</p> : null}
-      {successNote ? <p className={styles.success}>{successNote}</p> : null}
-
-      {isCheckingSession ? (
-        <section className={styles.card}>
-          <p className={styles.muted}>Checking session...</p>
-        </section>
-      ) : !auth ? (
-        <section className={styles.card}>
-          <p className={styles.muted}>Redirecting to login...</p>
-        </section>
-      ) : (
-        <section className={styles.appGrid}>
-          <article className={styles.card}>
-            <h2>Your profile</h2>
-            {isLoadingHome && !currentProfile ? <p className={styles.muted}>Loading profile...</p> : null}
-            {!currentProfile && !isLoadingHome ? <p className={styles.empty}>Profile missing. Please save your profile to continue.</p> : null}
-            <form onSubmit={handleSaveProfile}>
-              <input value={profileForm.displayName} onChange={(e) => setProfileForm((p) => ({ ...p, displayName: e.target.value }))} placeholder="Display name" required />
-              <input value={profileForm.avatarUrl} onChange={(e) => setProfileForm((p) => ({ ...p, avatarUrl: e.target.value }))} placeholder="Avatar URL" required />
-              <input value={profileForm.city} onChange={(e) => setProfileForm((p) => ({ ...p, city: e.target.value }))} placeholder="City" />
-              <textarea value={profileForm.bio} onChange={(e) => setProfileForm((p) => ({ ...p, bio: e.target.value }))} rows={3} placeholder="Bio" />
-              <input value={profileForm.interests} onChange={(e) => setProfileForm((p) => ({ ...p, interests: e.target.value }))} placeholder="Interests" />
-              <button className={styles.primaryButton} type="submit" disabled={isSavingProfile}>
-                {isSavingProfile ? "Saving..." : "Save profile"}
+      <div className={styles.shell}>
+        <section className={styles.banner}>
+          <header className={styles.header}>
+            <div>
+              <h1>AID-32 Match Console</h1>
+              <p>Profil pflegen, neue Leute entdecken und direkt im gleichen Interface chatten.</p>
+            </div>
+            {auth ? (
+              <button className={styles.secondaryButton} onClick={logout} type="button">
+                Logout
               </button>
-            </form>
-            {!canLikeOthers ? <p className={styles.help}>Bitte mindestens Avatar und Bio setzen, bevor du andere likest.</p> : null}
-          </article>
+            ) : null}
+          </header>
+          <div className={styles.statRow}>
+            <span className={styles.statChip}>Discover: {discovery.length}</span>
+            <span className={styles.statChip}>Matches: {matches.length}</span>
+            <span className={styles.statChip}>Messages: {messages.length}</span>
+          </div>
+        </section>
 
-          <article className={styles.card}>
-            <h2>Discover profiles</h2>
-            {isLoadingHome ? <p className={styles.muted}>Loading profiles...</p> : null}
-            {!isLoadingHome && discovery.length === 0 ? <p className={styles.empty}>No profiles available yet.</p> : null}
-            <div className={styles.profileList}>
-              {discovery.map((profile) => (
-                <div key={profile.profileId} className={styles.profileCard}>
-                  <h3>{profile.displayName}</h3>
-                  <p>{profile.city || "City not set"}</p>
-                  <p>{profile.bio || "No bio yet"}</p>
-                  <p className={styles.muted}>{profile.interests || "No interests yet"}</p>
-                  <div className={styles.row}>
-                    <button className={styles.secondaryButton} type="button">Dislike</button>
-                    <button className={styles.primaryButton} type="button" disabled={Boolean(isLiking) || !canLikeOthers} onClick={() => handleLike(profile.profileId)}>
-                      {isLiking === profile.profileId ? "Liking..." : profile.likedByCurrentUser ? "Liked" : "Like"}
+        {globalError ? <p className={styles.error}>{globalError}</p> : null}
+        {successNote ? <p className={styles.success}>{successNote}</p> : null}
+
+        {isCheckingSession ? (
+          <section className={styles.card}>
+            <p className={styles.muted}>Checking session...</p>
+          </section>
+        ) : !auth ? (
+          <section className={styles.card}>
+            <p className={styles.muted}>Redirecting to login...</p>
+          </section>
+        ) : (
+          <section className={styles.layout}>
+            <div className={styles.column}>
+              <article className={styles.card}>
+                <h2>Your profile</h2>
+                {isLoadingHome && !currentProfile ? <p className={styles.muted}>Loading profile...</p> : null}
+                {!currentProfile && !isLoadingHome ? <p className={styles.empty}>Profile missing. Please save your profile to continue.</p> : null}
+                <form onSubmit={handleSaveProfile}>
+                  <input value={profileForm.displayName} onChange={(e) => setProfileForm((p) => ({ ...p, displayName: e.target.value }))} placeholder="Display name" required />
+                  <input value={profileForm.avatarUrl} onChange={(e) => setProfileForm((p) => ({ ...p, avatarUrl: e.target.value }))} placeholder="Avatar URL" required />
+                  <input value={profileForm.city} onChange={(e) => setProfileForm((p) => ({ ...p, city: e.target.value }))} placeholder="City" />
+                  <textarea value={profileForm.bio} onChange={(e) => setProfileForm((p) => ({ ...p, bio: e.target.value }))} rows={3} placeholder="Bio" />
+                  <input value={profileForm.interests} onChange={(e) => setProfileForm((p) => ({ ...p, interests: e.target.value }))} placeholder="Interests" />
+                  <button className={styles.primaryButton} type="submit" disabled={isSavingProfile}>
+                    {isSavingProfile ? "Saving..." : "Save profile"}
+                  </button>
+                </form>
+                {!canLikeOthers ? <p className={styles.help}>Bitte mindestens Avatar und Bio setzen, bevor du andere likest.</p> : null}
+              </article>
+
+              <article className={styles.card}>
+                <h2>Matches</h2>
+                {isLoadingHome ? <p className={styles.muted}>Loading matches...</p> : null}
+                {!isLoadingHome && matches.length === 0 ? <p className={styles.empty}>No matches yet.</p> : null}
+                <div className={styles.matchList}>
+                  {matches.map((match) => (
+                    <button
+                      key={match.matchId}
+                      type="button"
+                      className={`${styles.matchItem} ${match.matchId === selectedMatchId ? styles.matchItemActive : ""}`}
+                      onClick={async () => {
+                        setSelectedMatchId(match.matchId);
+                        if (auth) {
+                          await loadChat(match.matchId);
+                        }
+                      }}
+                    >
+                      <strong>{match.displayName}</strong>
+                      <span>{new Date(match.createdAt).toLocaleDateString()}</span>
                     </button>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              </article>
             </div>
-          </article>
 
-          <article className={styles.card}>
-            <h2>Matches</h2>
-            {isLoadingHome ? <p className={styles.muted}>Loading matches...</p> : null}
-            {!isLoadingHome && matches.length === 0 ? <p className={styles.empty}>No matches yet.</p> : null}
-            <div className={styles.matchList}>
-              {matches.map((match) => (
-                <button
-                  key={match.matchId}
-                  type="button"
-                  className={`${styles.matchItem} ${match.matchId === selectedMatchId ? styles.matchItemActive : ""}`}
-                  onClick={async () => {
-                    setSelectedMatchId(match.matchId);
-                    if (auth) {
-                      await loadChat(match.matchId);
-                    }
-                  }}
-                >
-                  <strong>{match.displayName}</strong>
-                  <span>{new Date(match.createdAt).toLocaleDateString()}</span>
-                </button>
-              ))}
-            </div>
-          </article>
-
-          <article className={styles.card}>
-            <h2>Chat</h2>
-            {!selectedMatch ? <p className={styles.empty}>No match selected yet.</p> : null}
-            {selectedMatch && isLoadingChat ? <p className={styles.muted}>Loading messages...</p> : null}
-            {selectedMatch && !isLoadingChat && messages.length === 0 ? <p className={styles.empty}>No messages yet. Start the conversation.</p> : null}
-            <div className={styles.messages}>
-              {messages.map((message) => (
-                <div key={message.messageId} className={`${styles.message} ${message.senderId === auth.userId ? styles.messageOwn : ""}`}>
-                  <p>{message.content}</p>
-                  <span>{message.senderDisplayName}</span>
+            <div className={styles.column}>
+              <article className={styles.card}>
+                <h2>Discover profiles</h2>
+                {isLoadingHome ? <p className={styles.muted}>Loading profiles...</p> : null}
+                {!isLoadingHome && discovery.length === 0 ? <p className={styles.empty}>No profiles available yet.</p> : null}
+                <div className={styles.profileList}>
+                  {discovery.map((profile) => (
+                    <div key={profile.profileId} className={styles.profileCard}>
+                      <h3>{profile.displayName}</h3>
+                      <p>{profile.city || "City not set"}</p>
+                      <p>{profile.bio || "No bio yet"}</p>
+                      <p className={styles.muted}>{profile.interests || "No interests yet"}</p>
+                      <div className={styles.row}>
+                        <button className={styles.secondaryButton} type="button">Dislike</button>
+                        <button className={styles.primaryButton} type="button" disabled={Boolean(isLiking) || !canLikeOthers} onClick={() => handleLike(profile.profileId)}>
+                          {isLiking === profile.profileId ? "Liking..." : profile.likedByCurrentUser ? "Liked" : "Like"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </article>
             </div>
-            <form className={styles.row} onSubmit={handleSendMessage}>
-              <input value={chatInput} maxLength={500} onChange={(e) => setChatInput(e.target.value)} placeholder="Type a message" disabled={!selectedMatch || isSendingMessage} />
-              <button className={styles.primaryButton} disabled={!selectedMatch || isSendingMessage} type="submit">
-                {isSendingMessage ? "Sending..." : "Send"}
-              </button>
-            </form>
-          </article>
-        </section>
-      )}
+
+            <div className={styles.column}>
+              <article className={styles.card}>
+                <h2>Chat</h2>
+                {!selectedMatch ? <p className={styles.empty}>No match selected yet.</p> : null}
+                {selectedMatch && isLoadingChat ? <p className={styles.muted}>Loading messages...</p> : null}
+                {selectedMatch && !isLoadingChat && messages.length === 0 ? <p className={styles.empty}>No messages yet. Start the conversation.</p> : null}
+                <div className={styles.messages}>
+                  {messages.map((message) => (
+                    <div key={message.messageId} className={`${styles.message} ${message.senderId === auth.userId ? styles.messageOwn : ""}`}>
+                      <p>{message.content}</p>
+                      <span>{message.senderDisplayName}</span>
+                    </div>
+                  ))}
+                </div>
+                <form className={styles.row} onSubmit={handleSendMessage}>
+                  <input value={chatInput} maxLength={500} onChange={(e) => setChatInput(e.target.value)} placeholder="Type a message" disabled={!selectedMatch || isSendingMessage} />
+                  <button className={styles.primaryButton} disabled={!selectedMatch || isSendingMessage} type="submit">
+                    {isSendingMessage ? "Sending..." : "Send"}
+                  </button>
+                </form>
+              </article>
+            </div>
+          </section>
+        )}
+      </div>
     </main>
   );
 }

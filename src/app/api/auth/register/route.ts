@@ -40,6 +40,7 @@ export async function POST(request: Request) {
     city?: unknown;
     interests?: unknown;
     inviteCode?: unknown;
+    secret?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -53,6 +54,8 @@ export async function POST(request: Request) {
   const rawCity = asOptionalString(body.city);
   const rawInterests = asOptionalString(body.interests);
   const rawInviteCode = asOptionalString(body.inviteCode);
+  const rawSecret = asOptionalString(body.secret);
+  const customSecret = rawSecret?.trim();
 
   const email = rawEmail ? normalizeEmail(rawEmail) : "";
   const displayName = rawDisplayName ? sanitizeUserText(rawDisplayName, 80) : "";
@@ -67,6 +70,9 @@ export async function POST(request: Request) {
   if (!email || !displayName || !isValidEmail(email) || displayName.length < 2) {
     return fail(400, "BAD_REQUEST", "email and displayName are required");
   }
+  if (customSecret && (customSecret.length < 8 || customSecret.length > 128)) {
+    return fail(400, "BAD_REQUEST", "secret must be 8-128 characters");
+  }
   const limit = checkRateLimit(`auth:register:${email}`, 3, 10 * 60 * 1000);
   if (!limit.allowed) {
     return fail(429, "TOO_MANY_REQUESTS", "Too many registration attempts. Please retry later.");
@@ -80,7 +86,7 @@ export async function POST(request: Request) {
       return fail(409, "CONFLICT", "A user with this email already exists");
     }
 
-    const secret = generateSecret();
+    const secret = customSecret || generateSecret();
     const user = await prisma.user.create({
       data: {
         email,
