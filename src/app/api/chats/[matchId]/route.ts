@@ -88,7 +88,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
 
     const cooldown = checkRateLimit(`chat:send:${currentUserId}:${matchId}`, 1, 2000);
     if (!cooldown.allowed) {
-      return fail(429, "BAD_REQUEST", "Message cooldown active. Please wait a moment.");
+      return fail(429, "TOO_MANY_REQUESTS", "Message cooldown active. Please wait a moment.");
     }
 
     const message = await prisma.$transaction(async (tx) => {

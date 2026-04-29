@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
   const limit = checkRateLimit(`auth:login:${email}`, 5, 5 * 60 * 1000);
   if (!limit.allowed) {
-    return fail(429, "BAD_REQUEST", "Too many login attempts. Please retry later.");
+    return fail(429, "TOO_MANY_REQUESTS", "Too many login attempts. Please retry later.");
   }
 
   const user = await prisma.user.findUnique({ where: { email }, include: { profile: true } });

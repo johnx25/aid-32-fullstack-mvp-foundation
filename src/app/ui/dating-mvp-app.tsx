@@ -27,6 +27,7 @@ function mapErrorMessage(error: ApiResult<unknown>["error"], fallback: string) {
   if (error.code === "UNAUTHORIZED") return "Login fehlgeschlagen: Bitte Secret prüfen.";
   if (error.code === "CONFLICT") return "Diese E-Mail ist bereits registriert.";
   if (error.code === "PROFILE_INCOMPLETE") return "Bitte Profil vervollständigen (Avatar + Bio), bevor du likest.";
+  if (error.code === "TOO_MANY_REQUESTS") return "Zu viele Anfragen. Bitte kurz warten und erneut versuchen.";
   return error.message || fallback;
 }
 

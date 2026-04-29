@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   }
   const limit = checkRateLimit(`auth:register:${email}`, 3, 10 * 60 * 1000);
   if (!limit.allowed) {
-    return fail(429, "BAD_REQUEST", "Too many registration attempts. Please retry later.");
+    return fail(429, "TOO_MANY_REQUESTS", "Too many registration attempts. Please retry later.");
   }
 
   try {

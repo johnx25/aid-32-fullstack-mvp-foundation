@@ -7,7 +7,7 @@ export type ApiErrorCode =
   | "PROFILE_INCOMPLETE"
   | "NOT_FOUND"
   | "CONFLICT"
-  | "PROFILE_INCOMPLETE"
+  | "TOO_MANY_REQUESTS"
   | "INTERNAL_ERROR";
 
 export function ok<T>(data: T, status = 200) {
