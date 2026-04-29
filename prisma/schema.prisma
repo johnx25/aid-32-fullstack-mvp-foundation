@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -20,6 +21,7 @@ model User {
   matchesA    Match[]   @relation("matchUserA")
   matchesB    Match[]   @relation("matchUserB")
   messagesSent Message[] @relation("messageSender")
+  tasks        Task[]
 }
 
 model Profile {
@@ -78,9 +80,14 @@ model Message {
 
 model Task {
   id          Int      @id @default(autoincrement())
+  userId      Int?
   title       String
   description String?
   completed   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

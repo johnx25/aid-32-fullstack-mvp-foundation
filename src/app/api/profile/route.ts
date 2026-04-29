@@ -49,23 +49,32 @@ export async function PATCH(request: Request) {
       return fail(404, "NOT_FOUND", "Profile not found");
     }
 
-    const displayName = body.displayName ? sanitizeUserText(body.displayName, 80) : undefined;
-    const bio = body.bio ? sanitizeUserText(body.bio, 500) : undefined;
-    const city = body.city ? sanitizeUserText(body.city, 120) : undefined;
-    const interests = body.interests ? sanitizeUserText(body.interests, 500) : undefined;
-    const avatarUrl = body.avatarUrl ? sanitizeUserText(body.avatarUrl, 300) : undefined;
+    const hasDisplayName = "displayName" in body;
+    const hasBio = "bio" in body;
+    const hasCity = "city" in body;
+    const hasInterests = "interests" in body;
+    const hasAvatarUrl = "avatarUrl" in body;
 
-    if (displayName && displayName.length >= 2) {
+    const displayName = hasDisplayName ? sanitizeUserText(body.displayName ?? "", 80) : undefined;
+    const bio = hasBio ? sanitizeUserText(body.bio ?? "", 500) : undefined;
+    const city = hasCity ? sanitizeUserText(body.city ?? "", 120) : undefined;
+    const interests = hasInterests ? sanitizeUserText(body.interests ?? "", 500) : undefined;
+    const avatarUrl = hasAvatarUrl ? sanitizeUserText(body.avatarUrl ?? "", 300) : undefined;
+
+    if (hasDisplayName) {
+      if (!displayName || displayName.length < 2) {
+        return fail(400, "BAD_REQUEST", "displayName must be at least 2 characters");
+      }
       await prisma.user.update({ where: { id: currentUserId }, data: { displayName } });
     }
 
     const updated = await prisma.profile.update({
       where: { userId: currentUserId },
       data: {
-        avatarUrl: avatarUrl ?? undefined,
-        bio: bio ?? undefined,
-        city: city ?? undefined,
-        interests: interests ?? undefined,
+        avatarUrl,
+        bio,
+        city,
+        interests,
       },
       include: { user: true },
     });

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./dating-mvp-app.module.css";
 
 type Profile = {
@@ -22,7 +23,6 @@ type ApiResult<T> = { success: boolean; data?: T; error?: { code: string; messag
 
 function mapErrorMessage(error: ApiResult<unknown>["error"], fallback: string) {
   if (!error) return fallback;
-  if (error.code === "UNAUTHORIZED") return "Login fehlgeschlagen: Bitte Secret prüfen.";
   if (error.code === "CONFLICT") return "Diese E-Mail ist bereits registriert.";
   if (error.code === "PROFILE_INCOMPLETE") return "Bitte Profil vervollständigen (Avatar + Bio), bevor du likest.";
   if (error.code === "TOO_MANY_REQUESTS") return "Zu viele Anfragen. Bitte kurz warten und erneut versuchen.";
@@ -45,12 +45,10 @@ async function apiRequest<T>(
 }
 
 export function DatingMvpApp() {
+  const router = useRouter();
   const [auth, setAuth] = useState<{ userId: number; email: string; displayName: string } | null>(null);
-  const [registerForm, setRegisterForm] = useState({ email: "", displayName: "", bio: "", city: "", interests: "", inviteCode: "" });
-  const [loginForm, setLoginForm] = useState({ email: "", secret: "" });
   const [profileForm, setProfileForm] = useState({ displayName: "", avatarUrl: "/avatars/default.svg", bio: "", city: "", interests: "" });
 
-  const [registerSecret, setRegisterSecret] = useState<string>("");
   const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null);
   const [chatInput, setChatInput] = useState("");
 
@@ -62,8 +60,6 @@ export function DatingMvpApp() {
   const [globalError, setGlobalError] = useState("");
   const [successNote, setSuccessNote] = useState("");
 
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isLoadingHome, setIsLoadingHome] = useState(false);
   const [isLiking, setIsLiking] = useState<number | null>(null);
@@ -143,6 +139,7 @@ export function DatingMvpApp() {
         if (!isMounted) return;
         if (!sessionRes.success || !sessionRes.data) {
           setAuth(null);
+          router.replace("/login");
           return;
         }
 
@@ -159,60 +156,7 @@ export function DatingMvpApp() {
     return () => {
       isMounted = false;
     };
-  }, [refreshMainData]);
-
-  async function handleRegister(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (isRegistering) return;
-    setGlobalError("");
-    setSuccessNote("");
-    setIsRegistering(true);
-
-    try {
-      const res = await apiRequest<{ secret: string }>("/api/auth/register", {
-        method: "POST",
-        body: JSON.stringify(registerForm),
-      });
-
-      if (!res.success) {
-        setGlobalError(mapErrorMessage(res.error, "Registrierung fehlgeschlagen."));
-        return;
-      }
-
-      setRegisterSecret(res.data?.secret || "");
-      setLoginForm((prev) => ({ ...prev, email: registerForm.email, secret: res.data?.secret || "" }));
-      setRegisterForm({ email: "", displayName: "", bio: "", city: "", interests: "", inviteCode: "" });
-      setSuccessNote("Konto erstellt. Secret sicher speichern und für den Login verwenden.");
-    } finally {
-      setIsRegistering(false);
-    }
-  }
-
-  async function handleLogin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (isLoggingIn) return;
-    setGlobalError("");
-    setSuccessNote("");
-    setIsLoggingIn(true);
-
-    try {
-      const res = await apiRequest<{ userId: number; email: string; displayName: string }>("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify(loginForm),
-      });
-
-      if (!res.success || !res.data) {
-        setGlobalError(mapErrorMessage(res.error, "Login fehlgeschlagen."));
-        return;
-      }
-
-      setAuth(res.data);
-      await refreshMainData();
-      setSuccessNote("Erfolgreich eingeloggt.");
-    } finally {
-      setIsLoggingIn(false);
-    }
-  }
+  }, [refreshMainData, router]);
 
   async function handleSaveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -310,6 +254,7 @@ export function DatingMvpApp() {
     setMatches([]);
     setMessages([]);
     setSelectedMatchId(null);
+    router.replace("/login");
   }
 
   return (
@@ -334,31 +279,8 @@ export function DatingMvpApp() {
           <p className={styles.muted}>Checking session...</p>
         </section>
       ) : !auth ? (
-        <section className={styles.authGrid}>
-          <form onSubmit={handleRegister} className={styles.card}>
-            <h2>Register</h2>
-            <p className={styles.help}>Onboarding Schritt 1: Konto erstellen. Schritt 2: Profil vervollständigen.</p>
-            <input placeholder="Email" value={registerForm.email} onChange={(e) => setRegisterForm((p) => ({ ...p, email: e.target.value }))} required />
-            <input placeholder="Display Name" value={registerForm.displayName} onChange={(e) => setRegisterForm((p) => ({ ...p, displayName: e.target.value }))} required />
-            <input placeholder="Invite Code (wenn Beta aktiv)" value={registerForm.inviteCode} onChange={(e) => setRegisterForm((p) => ({ ...p, inviteCode: e.target.value }))} />
-            <input placeholder="City" value={registerForm.city} onChange={(e) => setRegisterForm((p) => ({ ...p, city: e.target.value }))} />
-            <textarea placeholder="Bio" rows={3} value={registerForm.bio} onChange={(e) => setRegisterForm((p) => ({ ...p, bio: e.target.value }))} />
-            <input placeholder="Interests (comma separated)" value={registerForm.interests} onChange={(e) => setRegisterForm((p) => ({ ...p, interests: e.target.value }))} />
-            <button className={styles.primaryButton} type="submit" disabled={isRegistering}>
-              {isRegistering ? "Creating account..." : "Create account"}
-            </button>
-            {registerSecret ? <p className={styles.secret}>One-time secret: <code>{registerSecret}</code></p> : null}
-          </form>
-
-          <form onSubmit={handleLogin} className={styles.card}>
-            <h2>Login</h2>
-            <input placeholder="Email" value={loginForm.email} onChange={(e) => setLoginForm((p) => ({ ...p, email: e.target.value }))} required />
-            <input placeholder="Secret" value={loginForm.secret} onChange={(e) => setLoginForm((p) => ({ ...p, secret: e.target.value }))} required />
-            <button className={styles.primaryButton} type="submit" disabled={isLoggingIn}>
-              {isLoggingIn ? "Signing in..." : "Sign in"}
-            </button>
-            <p className={styles.help}>Use the secret you received during registration.</p>
-          </form>
+        <section className={styles.card}>
+          <p className={styles.muted}>Redirecting to login...</p>
         </section>
       ) : (
         <section className={styles.appGrid}>
