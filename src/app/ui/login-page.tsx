@@ -6,6 +6,81 @@ import styles from "./login-page.module.css";
 
 type ApiResult<T> = { success: boolean; data?: T; error?: { code: string; message: string } };
 
+type RegisterResponseData = {
+  userId: number;
+  email: string;
+  displayName: string;
+  secret: string;
+};
+
+type LoginResponseData = {
+  userId: number;
+  email: string;
+  displayName: string;
+  authTokenExpiresAt: string;
+};
+
+function normalizeEmailInput(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function normalizeRegisterInput(input: {
+  email: string;
+  displayName: string;
+  bio: string;
+  city: string;
+  interests: string;
+  inviteCode: string;
+}) {
+  return {
+    email: normalizeEmailInput(input.email),
+    displayName: input.displayName.trim(),
+    bio: input.bio.trim(),
+    city: input.city.trim(),
+    interests: input.interests.trim(),
+    inviteCode: input.inviteCode.trim(),
+  };
+}
+
+function normalizeLoginInput(input: { email: string; secret: string }) {
+  return {
+    email: normalizeEmailInput(input.email),
+    secret: input.secret.trim(),
+  };
+}
+
+function isValidRegisterResponseData(data: unknown): data is RegisterResponseData {
+  if (!data || typeof data !== "object") return false;
+  const value = data as Partial<RegisterResponseData>;
+  return (
+    typeof value.userId === "number" &&
+    Number.isFinite(value.userId) &&
+    value.userId > 0 &&
+    typeof value.email === "string" &&
+    value.email.length > 0 &&
+    typeof value.displayName === "string" &&
+    value.displayName.length > 0 &&
+    typeof value.secret === "string" &&
+    value.secret.trim().length > 0
+  );
+}
+
+function isValidLoginResponseData(data: unknown): data is LoginResponseData {
+  if (!data || typeof data !== "object") return false;
+  const value = data as Partial<LoginResponseData>;
+  return (
+    typeof value.userId === "number" &&
+    Number.isFinite(value.userId) &&
+    value.userId > 0 &&
+    typeof value.email === "string" &&
+    value.email.length > 0 &&
+    typeof value.displayName === "string" &&
+    value.displayName.length > 0 &&
+    typeof value.authTokenExpiresAt === "string" &&
+    value.authTokenExpiresAt.length > 0
+  );
+}
+
 function mapErrorMessage(error: ApiResult<unknown>["error"], fallback: string) {
   if (!error) return fallback;
   if (error.code === "UNAUTHORIZED") return "Login failed. Please check your secret.";
@@ -83,9 +158,10 @@ export function LoginPage() {
     setIsRegistering(true);
 
     try {
-      const res = await apiRequest<{ secret: string }>("/api/auth/register", {
+      const nextRegisterForm = normalizeRegisterInput(registerForm);
+      const res = await apiRequest<RegisterResponseData>("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify(registerForm),
+        body: JSON.stringify(nextRegisterForm),
       });
 
       if (!res.success) {
@@ -93,9 +169,14 @@ export function LoginPage() {
         return;
       }
 
-      const nextSecret = res.data?.secret || "";
-      setRegisterSecret(nextSecret);
-      setLoginForm({ email: registerForm.email, secret: nextSecret });
+      if (!isValidRegisterResponseData(res.data)) {
+        setGlobalError("Registration failed due to an invalid server response.");
+        return;
+      }
+
+      setRegisterForm(nextRegisterForm);
+      setRegisterSecret(res.data.secret);
+      setLoginForm({ email: nextRegisterForm.email, secret: res.data.secret });
       setSuccessNote("Account created. Save your secret now and use it to log in.");
     } finally {
       setIsRegistering(false);
@@ -111,9 +192,10 @@ export function LoginPage() {
     setIsLoggingIn(true);
 
     try {
-      const res = await apiRequest<{ userId: number }>("/api/auth/login", {
+      const nextLoginForm = normalizeLoginInput(loginForm);
+      const res = await apiRequest<LoginResponseData>("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify(loginForm),
+        body: JSON.stringify(nextLoginForm),
       });
 
       if (!res.success) {
@@ -121,6 +203,12 @@ export function LoginPage() {
         return;
       }
 
+      if (!isValidLoginResponseData(res.data)) {
+        setGlobalError("Login failed due to an invalid server response.");
+        return;
+      }
+
+      setLoginForm(nextLoginForm);
       router.replace("/");
       router.refresh();
     } finally {
