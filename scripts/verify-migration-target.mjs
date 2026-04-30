@@ -9,7 +9,7 @@ async function tableExists(tableName) {
   const rows = await prisma.$queryRawUnsafe(
     `SELECT to_regclass('public."${tableName}"')::text AS name`,
   );
-  return Array.isArray(rows) && rows.length > 0 && rows[0]?.name === `public.${tableName}`;
+  return Array.isArray(rows) && rows.length > 0 && rows[0]?.name != null;
 }
 
 async function isBaselineApplied() {

@@ -15,12 +15,15 @@ PORT="${INTEGRATION_PORT:-3210}"
 BASE_URL="http://127.0.0.1:${PORT}"
 APP_PID=""
 HEALTH_OK="false"
+START_LOG="$(mktemp /tmp/aid32-start.XXXXXX.log)"
+HEALTH_JSON="$(mktemp /tmp/aid32-health.XXXXXX.json)"
 
 cleanup() {
   if [ -n "${APP_PID}" ] && kill -0 "${APP_PID}" >/dev/null 2>&1; then
     kill "${APP_PID}" >/dev/null 2>&1 || true
     wait "${APP_PID}" >/dev/null 2>&1 || true
   fi
+  rm -f "${START_LOG}" "${HEALTH_JSON}" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
@@ -43,24 +46,23 @@ echo "[integration] next build"
 npm run build
 
 echo "[integration] start app on ${BASE_URL}"
-PORT="${PORT}" npm run start >/tmp/aid32-start.log 2>&1 &
+PORT="${PORT}" npm run start >"${START_LOG}" 2>&1 &
 APP_PID="$!"
-rm -f /tmp/aid32-health.json
 
 for _ in $(seq 1 40); do
-  if curl -fsS "${BASE_URL}/api/health/db" >/tmp/aid32-health.json 2>/dev/null; then
+  if curl -fsS "${BASE_URL}/api/health/db" >"${HEALTH_JSON}" 2>/dev/null; then
     HEALTH_OK="true"
     break
   fi
   sleep 1
 done
 
-if [ "${HEALTH_OK}" != "true" ] || ! grep -q '"status":"ok"' /tmp/aid32-health.json; then
+if [ "${HEALTH_OK}" != "true" ] || ! grep -q '"status":"ok"' "${HEALTH_JSON}"; then
   echo "ERROR: Health response is not ok"
-  echo "--- /tmp/aid32-health.json ---"
-  cat /tmp/aid32-health.json || true
-  echo "--- /tmp/aid32-start.log ---"
-  tail -n 200 /tmp/aid32-start.log || true
+  echo "--- ${HEALTH_JSON} ---"
+  cat "${HEALTH_JSON}" || true
+  echo "--- ${START_LOG} ---"
+  tail -n 200 "${START_LOG}" || true
   exit 1
 fi
 
