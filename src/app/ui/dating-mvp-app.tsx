@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import styles from "./dating-mvp-app.module.css";
 
 type Profile = {
@@ -273,9 +274,9 @@ export function DatingMvpApp() {
             ) : null}
           </header>
           <div className={styles.statRow}>
-            <span className={styles.statChip}>Discover: {discovery.length}</span>
+            <span className={styles.statChip}>Profile im Discover: {discovery.length}</span>
             <span className={styles.statChip}>Matches: {matches.length}</span>
-            <span className={styles.statChip}>Messages: {messages.length}</span>
+            <span className={styles.statChip}>Nachrichten: {messages.length}</span>
           </div>
         </section>
 
@@ -311,7 +312,10 @@ export function DatingMvpApp() {
               </article>
 
               <article className={styles.card}>
-                <h2>Matches</h2>
+                <div className={styles.cardHeader}>
+                  <h2>Matches</h2>
+                  <span>{matches.length}</span>
+                </div>
                 {isLoadingHome ? <p className={styles.muted}>Loading matches...</p> : null}
                 {!isLoadingHome && matches.length === 0 ? <p className={styles.empty}>No matches yet.</p> : null}
                 <div className={styles.matchList}>
@@ -337,13 +341,25 @@ export function DatingMvpApp() {
 
             <div className={styles.column}>
               <article className={styles.card}>
-                <h2>Discover profiles</h2>
+                <div className={styles.cardHeader}>
+                  <h2>Discover profiles</h2>
+                  <span>{discovery.length}</span>
+                </div>
                 {isLoadingHome ? <p className={styles.muted}>Loading profiles...</p> : null}
                 {!isLoadingHome && discovery.length === 0 ? <p className={styles.empty}>No profiles available yet.</p> : null}
                 <div className={styles.profileList}>
                   {discovery.map((profile) => (
                     <div key={profile.profileId} className={styles.profileCard}>
-                      <h3>{profile.displayName}</h3>
+                      <div className={styles.profileHeader}>
+                        <Image
+                          src={profile.avatarUrl || "/avatars/default.svg"}
+                          alt={`${profile.displayName} avatar`}
+                          className={styles.avatar}
+                          width={32}
+                          height={32}
+                        />
+                        <h3>{profile.displayName}</h3>
+                      </div>
                       <p>{profile.city || "City not set"}</p>
                       <p>{profile.bio || "No bio yet"}</p>
                       <p className={styles.muted}>{profile.interests || "No interests yet"}</p>
@@ -361,7 +377,10 @@ export function DatingMvpApp() {
 
             <div className={styles.column}>
               <article className={styles.card}>
-                <h2>Chat</h2>
+                <div className={styles.cardHeader}>
+                  <h2>Chat</h2>
+                  <span>{selectedMatch ? selectedMatch.displayName : "Kein Match"}</span>
+                </div>
                 {!selectedMatch ? <p className={styles.empty}>No match selected yet.</p> : null}
                 {selectedMatch && isLoadingChat ? <p className={styles.muted}>Loading messages...</p> : null}
                 {selectedMatch && !isLoadingChat && messages.length === 0 ? <p className={styles.empty}>No messages yet. Start the conversation.</p> : null}
