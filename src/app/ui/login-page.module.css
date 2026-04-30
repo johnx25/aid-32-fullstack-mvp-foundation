@@ -106,14 +106,14 @@
 
 .card input:focus,
 .card textarea:focus {
-  outline: 2px solid #0f6dce;
+  outline: 2px solid var(--primary-color);
   outline-offset: 1px;
 }
 
 .card button,
 .linkButton {
   border: 0;
-  background: linear-gradient(92deg, #0055bc 0%, #0080d8 100%);
+  background: var(--primary-color);
   color: #ffffff;
   padding: 0.7rem 0.8rem;
   cursor: pointer;
@@ -127,7 +127,8 @@
 .card button:hover,
 .linkButton:hover {
   transform: translateY(-1px);
-  filter: brightness(1.02);
+  background: var(--primary-color-hover);
+  filter: none;
 }
 
 .card button:disabled {

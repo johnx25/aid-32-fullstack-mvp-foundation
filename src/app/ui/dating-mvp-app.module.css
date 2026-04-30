@@ -127,7 +127,7 @@
 
 .card input:focus,
 .card textarea:focus {
-  outline: 2px solid #0f6dce;
+  outline: 2px solid var(--primary-color);
   outline-offset: 1px;
 }
 
@@ -141,7 +141,11 @@
 
 .primaryButton {
   color: #ffffff;
-  background: linear-gradient(92deg, #0055bc 0%, #0080d8 100%);
+  background: var(--primary-color);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--primary-color-hover);
 }
 
 .primaryButton:disabled {
@@ -222,8 +226,8 @@
 }
 
 .matchItemActive {
-  border-color: #0f6dce;
-  background: #e9f3ff;
+  border-color: var(--primary-color);
+  background: var(--primary-color-soft);
 }
 
 .messages {

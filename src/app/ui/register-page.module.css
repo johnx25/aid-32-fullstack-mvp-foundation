@@ -1,8 +1,8 @@
 .page {
-  --focus-ring: #0f6dce;
+  --focus-ring: var(--primary-color);
   --success-text: #17522c;
   --success-bg: #ebfaef;
-  --link-color: #0f4fb8;
+  --link-color: var(--primary-color);
 
   min-height: 100dvh;
   display: grid;
@@ -106,13 +106,14 @@
   font-weight: 700;
   color: #ffffff;
   padding: 0.78rem 0.92rem;
-  background: linear-gradient(92deg, #0055bc 0%, #0080d8 100%);
+  background: var(--primary-color);
   transition: transform 170ms ease, filter 170ms ease;
 }
 
 .form button:hover {
   transform: translateY(-1px);
-  filter: brightness(1.02);
+  background: var(--primary-color-hover);
+  filter: none;
 }
 
 .form button:disabled {
