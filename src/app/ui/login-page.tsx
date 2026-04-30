@@ -148,21 +148,32 @@ export function LoginPage() {
         ) : (
           <div className={styles.grid}>
             <form onSubmit={handleLogin} className={styles.card}>
-              <label>
+              <label htmlFor="login-email">
                 Email
                 <input
+                  id="login-email"
+                  name="email"
                   placeholder="you@example.com"
                   type="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   value={loginForm.email}
                   onChange={(e) => setLoginForm((prev) => ({ ...prev, email: e.target.value }))}
                   required
                 />
               </label>
-              <label>
+              <label htmlFor="login-secret">
                 Secret
                 <input
+                  id="login-secret"
+                  name="secret"
                   placeholder="Paste your secret"
                   type="password"
+                  autoComplete="current-password"
+                  minLength={8}
+                  maxLength={128}
                   value={loginForm.secret}
                   onChange={(e) => setLoginForm((prev) => ({ ...prev, secret: e.target.value }))}
                   required
