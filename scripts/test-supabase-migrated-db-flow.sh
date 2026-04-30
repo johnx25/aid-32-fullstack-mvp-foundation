@@ -14,6 +14,7 @@ fi
 PORT="${INTEGRATION_PORT:-3210}"
 BASE_URL="http://127.0.0.1:${PORT}"
 APP_PID=""
+HEALTH_OK="false"
 
 cleanup() {
   if [ -n "${APP_PID}" ] && kill -0 "${APP_PID}" >/dev/null 2>&1; then
@@ -41,15 +42,17 @@ npm run build
 echo "[integration] start app on ${BASE_URL}"
 PORT="${PORT}" npm run start >/tmp/aid32-start.log 2>&1 &
 APP_PID="$!"
+rm -f /tmp/aid32-health.json
 
 for _ in $(seq 1 40); do
   if curl -fsS "${BASE_URL}/api/health/db" >/tmp/aid32-health.json 2>/dev/null; then
+    HEALTH_OK="true"
     break
   fi
   sleep 1
 done
 
-if ! grep -q '"status":"ok"' /tmp/aid32-health.json; then
+if [ "${HEALTH_OK}" != "true" ] || ! grep -q '"status":"ok"' /tmp/aid32-health.json; then
   echo "ERROR: Health response is not ok"
   echo "--- /tmp/aid32-health.json ---"
   cat /tmp/aid32-health.json || true
