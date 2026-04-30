@@ -9,6 +9,12 @@ if (isMigrateCommand && !process.env.DATABASE_URL) {
   );
 }
 
+if (isMigrateCommand && !process.env.DIRECT_URL) {
+  throw new Error(
+    "DIRECT_URL is required for Prisma migrate commands. Set DIRECT_URL to a direct PostgreSQL connection string."
+  );
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
