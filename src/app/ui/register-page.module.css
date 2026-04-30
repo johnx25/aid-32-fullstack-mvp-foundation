@@ -157,6 +157,25 @@
   padding: 0.16rem 0.32rem;
 }
 
+.continueButton {
+  margin-top: 0.75rem;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 0.72rem 0.9rem;
+  background: var(--primary-color);
+  transition: transform 170ms ease, filter 170ms ease;
+}
+
+.continueButton:hover {
+  transform: translateY(-1px);
+  background: var(--primary-color-hover);
+  filter: none;
+}
+
 .switch {
   margin-top: 1rem;
   color: #41526d;

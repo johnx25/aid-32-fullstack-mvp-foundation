@@ -2,7 +2,6 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import styles from "./dating-mvp-app.module.css";
 
 type Profile = {
@@ -351,12 +350,16 @@ export function DatingMvpApp() {
                   {discovery.map((profile) => (
                     <div key={profile.profileId} className={styles.profileCard}>
                       <div className={styles.profileHeader}>
-                        <Image
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
                           src={profile.avatarUrl || "/avatars/default.svg"}
                           alt={`${profile.displayName} avatar`}
                           className={styles.avatar}
                           width={32}
                           height={32}
+                          onError={(event) => {
+                            event.currentTarget.src = "/avatars/default.svg";
+                          }}
                         />
                         <h3>{profile.displayName}</h3>
                       </div>

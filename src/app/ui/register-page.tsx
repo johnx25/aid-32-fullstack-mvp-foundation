@@ -121,8 +121,7 @@ export function RegisterPage() {
         inviteCode: nextRegisterForm.inviteCode,
       }));
       setRegisterSecret(res.data.secret);
-      setSuccessNote("Account created. Save your one-time secret. You are signed in and can continue.");
-      router.replace(res.data.redirectTo);
+      setSuccessNote("Account created. Save your one-time secret, then continue to the app.");
     } finally {
       setIsRegistering(false);
     }
@@ -206,9 +205,14 @@ export function RegisterPage() {
         </form>
 
         {registerSecret ? (
-          <p className={styles.secret}>
-            One-time secret: <code>{registerSecret}</code>
-          </p>
+          <>
+            <p className={styles.secret}>
+              One-time secret: <code>{registerSecret}</code>
+            </p>
+            <button type="button" className={styles.continueButton} onClick={() => router.replace("/")}>
+              Continue to app
+            </button>
+          </>
         ) : null}
 
         <p className={styles.switch}>
