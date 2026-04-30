@@ -27,7 +27,7 @@ This repo now targets PostgreSQL for local/test and Supabase connectivity.
 
 1. Configure `.env`:
 - `DATABASE_URL` should point to either:
-  - local PostgreSQL (example): `postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public`
+  - PostgreSQL/Supabase (example): `postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres?schema=public`
   - Supabase pooled URL (transaction mode)
 - `DIRECT_URL` is required for Prisma migration commands and should point to a direct PostgreSQL connection URL.
 - For non-migration Prisma commands, if `DIRECT_URL` is not set, it falls back to `DATABASE_URL` via `prisma.config.ts`.

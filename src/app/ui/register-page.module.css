@@ -1,8 +1,8 @@
 .page {
-  --focus-ring: #0f6dce;
+  --focus-ring: var(--primary-color);
   --success-text: #17522c;
   --success-bg: #ebfaef;
-  --link-color: #0f4fb8;
+  --link-color: var(--primary-color);
 
   min-height: 100dvh;
   display: grid;
@@ -51,6 +51,7 @@
   display: grid;
   align-content: start;
   animation: panel-in 450ms ease-out;
+  gap: 0.25rem;
 }
 
 @keyframes panel-in {
@@ -105,7 +106,14 @@
   font-weight: 700;
   color: #ffffff;
   padding: 0.78rem 0.92rem;
-  background: linear-gradient(92deg, #0055bc 0%, #0080d8 100%);
+  background: var(--primary-color);
+  transition: transform 170ms ease, filter 170ms ease;
+}
+
+.form button:hover {
+  transform: translateY(-1px);
+  background: var(--primary-color-hover);
+  filter: none;
 }
 
 .form button:disabled {
@@ -120,6 +128,10 @@
 .error {
   color: #8c1c2c;
   margin-bottom: 0.6rem;
+  border: 1px solid #f3c1ca;
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+  background: #fff2f4;
 }
 
 .success {
@@ -143,6 +155,25 @@
   background: #e9f1ff;
   border-radius: 8px;
   padding: 0.16rem 0.32rem;
+}
+
+.continueButton {
+  margin-top: 0.75rem;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 0.72rem 0.9rem;
+  background: var(--primary-color);
+  transition: transform 170ms ease, filter 170ms ease;
+}
+
+.continueButton:hover {
+  transform: translateY(-1px);
+  background: var(--primary-color-hover);
+  filter: none;
 }
 
 .switch {

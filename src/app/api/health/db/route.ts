@@ -12,10 +12,19 @@ export async function GET() {
       checkedAt: new Date().toISOString(),
     });
   } catch (error) {
+    const reason = error instanceof Error ? error.message : "unknown";
+    const isDatabaseConfigError = reason.includes("DATABASE_URL");
+
     log("error", "health.db.unreachable", {
-      reason: error instanceof Error ? error.message : "unknown",
+      reason,
     });
 
-    return fail(503, "INTERNAL_ERROR", "Database is unreachable");
+    return fail(
+      503,
+      isDatabaseConfigError ? "DATABASE_CONFIG_ERROR" : "INTERNAL_ERROR",
+      isDatabaseConfigError
+        ? "Database configuration is invalid"
+        : "Database is unreachable"
+    );
   }
 }
