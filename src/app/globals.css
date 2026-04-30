@@ -1,14 +1,14 @@
 :root {
-  --primary-color: #e3214a;
-  --primary-color-hover: #c81d42;
-  --primary-color-soft: #ffe6ed;
-  --background: #f4f7fb;
-  --foreground: #101828;
+  --primary-color: #e45826;
+  --primary-color-hover: #c94418;
+  --primary-color-soft: #ffe8de;
+  --background: #f2f6fa;
+  --foreground: #141f2f;
   --surface: #ffffff;
-  --surface-muted: #eef3fb;
-  --border: #cdd8eb;
-  --text-muted: #475467;
-  --accent: #1565d8;
+  --surface-muted: #edf3ff;
+  --border: #ced8eb;
+  --text-muted: #455d7a;
+  --accent: #007f98;
 }
 
 html {
@@ -27,9 +27,15 @@ body {
   flex-direction: column;
   color: var(--foreground);
   background: var(--background);
-  font-family: "Plus Jakarta Sans", "Sora", "Manrope", "Avenir Next", sans-serif;
+  font-family: var(--font-app-sans), "Avenir Next", "Trebuchet MS", sans-serif;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+code,
+pre {
+  font-family: var(--font-app-mono), "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
 }
 
 * {
