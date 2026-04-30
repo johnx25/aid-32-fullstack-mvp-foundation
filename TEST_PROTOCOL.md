@@ -26,6 +26,7 @@ If the environment cannot route IPv6 to `db.<project-ref>.supabase.co:5432`, set
 4. `npm run build` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
 5. `npm run prisma:migrate:deploy` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS on a reachable PostgreSQL/Supabase target
 6. `GET /api/health/db` against a running app + reachable DB -> PASS (`200`, `status: ok`)
+7. `npm run test:integration:supabase-flow` -> PASS path for full migrated DB flow (generate/validate/migrate/seed/build/start/healthcheck)
 
 ## Deterministic validation path (preferred)
 

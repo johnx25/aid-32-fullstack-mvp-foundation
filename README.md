@@ -44,6 +44,11 @@ npm run prisma:migrate:deploy
 SEED_MODE=demo npm run prisma:seed
 ```
 
+4. Run the migrated DB integration flow (migration + seed + healthcheck):
+```bash
+DATABASE_URL='postgresql://...' DIRECT_URL='postgresql://...' npm run test:integration:supabase-flow
+```
+
 If seed runs fail with `P1001` against `db.<project-ref>.supabase.co:5432`, your environment likely lacks IPv6 routing. Use a pooled Supabase URL in `DATABASE_URL` or set `SEED_DATABASE_URL` to the pooled URL.
 
 If Supabase secrets are unavailable, use any local PostgreSQL instance with the sample `DATABASE_URL` above for reproducible validation.
