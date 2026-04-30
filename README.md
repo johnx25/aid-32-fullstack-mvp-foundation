@@ -32,6 +32,7 @@ This repo now targets PostgreSQL for local/test and Supabase connectivity.
 - `DIRECT_URL` is required for Prisma migration commands and should point to a direct PostgreSQL connection URL.
 - For non-migration Prisma commands, if `DIRECT_URL` is not set, it falls back to `DATABASE_URL` via `prisma.config.ts`.
 - For Supabase setups, keep `DATABASE_URL` as pooled URL and set `DIRECT_URL` to the direct connection URL.
+- Optional for seed runs: `SEED_DATABASE_URL` overrides the Prisma seed connection target.
 
 2. Apply migrations (preferred deterministic path):
 ```bash
@@ -43,11 +44,18 @@ npm run prisma:migrate:deploy
 SEED_MODE=demo npm run prisma:seed
 ```
 
+4. Run the migrated DB integration flow (migration + seed + healthcheck):
+```bash
+DATABASE_URL='postgresql://...' DIRECT_URL='postgresql://...' npm run test:integration:supabase-flow
+```
+
+If seed runs fail with `P1001` against `db.<project-ref>.supabase.co:5432`, your environment likely lacks IPv6 routing. Use a pooled Supabase URL in `DATABASE_URL` or set `SEED_DATABASE_URL` to the pooled URL.
+
 If Supabase secrets are unavailable, use any local PostgreSQL instance with the sample `DATABASE_URL` above for reproducible validation.
 
 ## Migration safety
 
-- PostgreSQL/Supabase migrations are consolidated under `prisma/migrations_postgres/` (configured via `prisma.config.ts`).
+- PostgreSQL/Supabase migrations are consolidated under `prisma/migrations/` (configured via `prisma.config.ts`).
 - The repository no longer maintains a parallel SQLite migration path, reducing deploy/onboarding ambiguity.
 - Safe execution path for this repo stage: start with an empty PostgreSQL database, run `npm run prisma:migrate:deploy`, then seed if needed.
 

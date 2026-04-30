@@ -1,7 +1,39 @@
 import { PrismaClient } from "@prisma/client";
 import { hashSecret } from "../src/lib/secret-hash";
 
-const prisma = new PrismaClient();
+const seedDatabaseUrl =
+  process.env.SEED_DATABASE_URL || process.env.DATABASE_URL || process.env.DIRECT_URL;
+
+if (!seedDatabaseUrl) {
+  throw new Error(
+    "No database URL available for seed. Set SEED_DATABASE_URL, DATABASE_URL, or DIRECT_URL."
+  );
+}
+const resolvedSeedDatabaseUrl = seedDatabaseUrl;
+
+const prisma = new PrismaClient({
+  datasourceUrl: resolvedSeedDatabaseUrl,
+});
+
+function printSupabaseReachabilityHint(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  const isReachabilityError =
+    message.includes("P1001") || message.includes("Can't reach database server");
+  const isSupabaseDirect = resolvedSeedDatabaseUrl.includes(".supabase.co:5432");
+
+  if (!isReachabilityError || !isSupabaseDirect) {
+    return;
+  }
+
+  console.error(
+    [
+      "Supabase direct host on port 5432 is often IPv6-only.",
+      "If your environment has no IPv6 route, seed cannot reach db.<project-ref>.supabase.co:5432.",
+      "Use a Supabase pooled URL for DATABASE_URL/SEED_DATABASE_URL,",
+      "or enable Supabase dedicated IPv4 and keep DIRECT_URL for migrate commands.",
+    ].join(" ")
+  );
+}
 
 async function main() {
   const seedMode = process.env.SEED_MODE || "real";
@@ -65,6 +97,7 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (error) => {
+    printSupabaseReachabilityHint(error);
     console.error(error);
     await prisma.$disconnect();
     process.exit(1);
