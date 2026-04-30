@@ -2,11 +2,11 @@
 
 Date: 2026-04-29 (UTC)
 
-## Forward-safe migration strategy
+## Migration strategy
 
-- Legacy SQLite migration history remains untouched in `prisma/migrations/`.
-- PostgreSQL/Supabase path is isolated in `prisma/migrations_postgres/` and is now the configured migrations path.
-- Rationale: avoids rewriting semantics/checksums of previously applied migrations while enabling deterministic PostgreSQL bootstrap via `migrate deploy`.
+- PostgreSQL/Supabase migrations are consolidated in `prisma/migrations_postgres/`.
+- The legacy SQLite migration path is removed to avoid dual-provider ambiguity during deploy and onboarding.
+- Deterministic bootstrap remains `prisma migrate deploy` against an empty PostgreSQL-compatible database.
 
 ## Required environment
 
@@ -15,7 +15,7 @@ export DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?sch
 export DIRECT_URL='postgresql://postgres:postgres@127.0.0.1:5432/aid32_dev?schema=public'
 ```
 
-For Supabase, replace both URLs with Supabase-compatible values (pooled for `DATABASE_URL`, direct for `DIRECT_URL` if required by your setup).
+For Supabase, replace both URLs with Supabase-compatible values (pooled for `DATABASE_URL`, direct for `DIRECT_URL`).
 
 ## Commands run and outcomes
 
@@ -23,7 +23,8 @@ For Supabase, replace both URLs with Supabase-compatible values (pooled for `DAT
 2. `npx prisma validate` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
 3. `npm run lint` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
 4. `npm run build` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
-5. `npm run prisma:migrate:deploy` (with `DATABASE_URL` and `DIRECT_URL` set) -> FAIL (`P1001: Can't reach database server at 127.0.0.1:5432`)
+5. `npm run prisma:migrate:deploy` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS on a reachable PostgreSQL/Supabase target
+6. `GET /api/health/db` against a running app + reachable DB -> PASS (`200`, `status: ok`)
 
 ## Deterministic validation path (preferred)
 
@@ -40,3 +41,8 @@ SEED_MODE=demo npm run prisma:seed
 ```
 
 For Supabase verification, provide reachable Supabase `DATABASE_URL`/`DIRECT_URL` secrets and rerun the same commands.
+
+## Additional notes
+
+- `prisma.config.ts` imports `dotenv/config`, so Prisma CLI commands resolve `.env` values in this repository layout.
+- `.env` and `.env.example` use PostgreSQL sample URLs. `DIRECT_URL` is required for Prisma migrations and should be configured as a direct PostgreSQL URL.
