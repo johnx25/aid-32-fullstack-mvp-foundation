@@ -152,7 +152,11 @@ export function RegisterPage() {
           <label>
             Name
             <input
+              type="text"
               placeholder="Alex"
+              autoComplete="name"
+              minLength={2}
+              maxLength={80}
               value={registerForm.name}
               onChange={(e) => setRegisterForm((prev) => ({ ...prev, name: e.target.value }))}
               required
@@ -162,8 +166,9 @@ export function RegisterPage() {
           <label>
             Email
             <input
-              placeholder="you@example.com"
               type="email"
+              placeholder="you@example.com"
+              autoComplete="email"
               value={registerForm.email}
               onChange={(e) => setRegisterForm((prev) => ({ ...prev, email: e.target.value }))}
               required
@@ -173,7 +178,10 @@ export function RegisterPage() {
           <label>
             City
             <input
+              type="text"
               placeholder="Berlin"
+              autoComplete="address-level2"
+              maxLength={120}
               value={registerForm.city}
               onChange={(e) => setRegisterForm((prev) => ({ ...prev, city: e.target.value }))}
             />
@@ -184,6 +192,7 @@ export function RegisterPage() {
             <textarea
               rows={4}
               placeholder="Tell others what you are into"
+              maxLength={500}
               value={registerForm.bio}
               onChange={(e) => setRegisterForm((prev) => ({ ...prev, bio: e.target.value }))}
             />
@@ -192,7 +201,9 @@ export function RegisterPage() {
           <label>
             Interests
             <input
+              type="text"
               placeholder="hiking, coffee, live music"
+              maxLength={500}
               value={registerForm.interests}
               onChange={(e) => setRegisterForm((prev) => ({ ...prev, interests: e.target.value }))}
             />
@@ -201,7 +212,9 @@ export function RegisterPage() {
           <label>
             Invite code
             <input
+              type="text"
               placeholder="Optional unless beta mode is on"
+              autoComplete="off"
               value={registerForm.inviteCode}
               onChange={(e) => setRegisterForm((prev) => ({ ...prev, inviteCode: e.target.value }))}
             />
