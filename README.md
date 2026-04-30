@@ -29,7 +29,9 @@ This repo now targets PostgreSQL for local/test and Supabase connectivity.
 - `DATABASE_URL` should point to either:
   - PostgreSQL/Supabase (example): `postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres?schema=public`
   - Supabase pooled URL (transaction mode)
-- `DIRECT_URL` must point to a direct PostgreSQL connection (required for Prisma migration commands).
+- `DIRECT_URL` is required for Prisma migration commands and should point to a direct PostgreSQL connection URL.
+- For non-migration Prisma commands, if `DIRECT_URL` is not set, it falls back to `DATABASE_URL` via `prisma.config.ts`.
+- For Supabase setups, keep `DATABASE_URL` as pooled URL and set `DIRECT_URL` to the direct connection URL.
 
 2. Apply migrations (preferred deterministic path):
 ```bash
@@ -42,7 +44,6 @@ SEED_MODE=demo npm run prisma:seed
 ```
 
 If Supabase secrets are unavailable, use any local PostgreSQL instance with the sample `DATABASE_URL` above for reproducible validation.
-For Supabase: keep `DATABASE_URL` as pooled URL and set `DIRECT_URL` to the direct connection URL.
 
 ## Migration safety
 
