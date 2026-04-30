@@ -263,6 +263,7 @@ export function DatingMvpApp() {
         <section className={styles.banner}>
           <header className={styles.header}>
             <div>
+              <p className={styles.eyebrow}>AID-32 Beta</p>
               <h1>AID-32 Match Console</h1>
               <p>Profil pflegen, neue Leute entdecken und direkt im gleichen Interface chatten.</p>
             </div>
@@ -295,6 +296,7 @@ export function DatingMvpApp() {
             <div className={styles.column}>
               <article className={styles.card}>
                 <h2>Your profile</h2>
+                <p className={styles.sectionLead}>Deine Angaben steuern Discovery, Match-Qualität und Chat-Freischaltung.</p>
                 {isLoadingHome && !currentProfile ? <p className={styles.muted}>Loading profile...</p> : null}
                 {!currentProfile && !isLoadingHome ? <p className={styles.empty}>Profile missing. Please save your profile to continue.</p> : null}
                 <form onSubmit={handleSaveProfile}>
@@ -344,6 +346,7 @@ export function DatingMvpApp() {
                   <h2>Discover profiles</h2>
                   <span>{discovery.length}</span>
                 </div>
+                <p className={styles.sectionLead}>Swipe-ready Profile Cards mit klarem Fokus auf Kompatibilität.</p>
                 {isLoadingHome ? <p className={styles.muted}>Loading profiles...</p> : null}
                 {!isLoadingHome && discovery.length === 0 ? <p className={styles.empty}>No profiles available yet.</p> : null}
                 <div className={styles.profileList}>
@@ -362,8 +365,8 @@ export function DatingMvpApp() {
                           }}
                         />
                         <h3>{profile.displayName}</h3>
+                        <span className={styles.metaChip}>{profile.city || "City not set"}</span>
                       </div>
-                      <p>{profile.city || "City not set"}</p>
                       <p>{profile.bio || "No bio yet"}</p>
                       <p className={styles.muted}>{profile.interests || "No interests yet"}</p>
                       <div className={styles.row}>
@@ -384,6 +387,7 @@ export function DatingMvpApp() {
                   <h2>Chat</h2>
                   <span>{selectedMatch ? selectedMatch.displayName : "Kein Match"}</span>
                 </div>
+                <p className={styles.sectionLead}>Direkter Match-Chat mit Verlauf und schneller Antwortleiste.</p>
                 {!selectedMatch ? <p className={styles.empty}>No match selected yet.</p> : null}
                 {selectedMatch && isLoadingChat ? <p className={styles.muted}>Loading messages...</p> : null}
                 {selectedMatch && !isLoadingChat && messages.length === 0 ? <p className={styles.empty}>No messages yet. Start the conversation.</p> : null}

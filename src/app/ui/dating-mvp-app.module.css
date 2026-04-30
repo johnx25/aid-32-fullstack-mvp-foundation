@@ -31,7 +31,16 @@
   gap: 0.8rem;
 }
 
+.eyebrow {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #0057be;
+}
+
 .header h1 {
+  margin-top: 0.3rem;
   font-size: clamp(1.55rem, 3.8vw, 2.45rem);
   line-height: 1;
 }
@@ -98,6 +107,11 @@
 
 .card h2 {
   font-size: 1.05rem;
+}
+
+.sectionLead {
+  font-size: 0.9rem;
+  color: #4b5d7a;
 }
 
 .cardHeader {
@@ -213,6 +227,19 @@
   display: flex;
   align-items: center;
   gap: 0.52rem;
+}
+
+.metaChip {
+  margin-left: auto;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #2d486d;
+  border: 1px solid #c8d8ee;
+  border-radius: 999px;
+  padding: 0.26rem 0.5rem;
+  background: #f3f8ff;
 }
 
 .avatar {
