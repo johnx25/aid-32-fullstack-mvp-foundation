@@ -274,9 +274,9 @@ export function DatingMvpApp() {
             ) : null}
           </header>
           <div className={styles.statRow}>
-            <span className={styles.statChip}>Discover: {discovery.length}</span>
+            <span className={styles.statChip}>Profile im Discover: {discovery.length}</span>
             <span className={styles.statChip}>Matches: {matches.length}</span>
-            <span className={styles.statChip}>Messages: {messages.length}</span>
+            <span className={styles.statChip}>Nachrichten: {messages.length}</span>
           </div>
         </section>
 
@@ -313,7 +313,10 @@ export function DatingMvpApp() {
               </article>
 
               <article className={styles.card}>
-                <h2>Matches</h2>
+                <div className={styles.cardHeader}>
+                  <h2>Matches</h2>
+                  <span>{matches.length}</span>
+                </div>
                 {isLoadingHome ? <p className={styles.muted}>Loading matches...</p> : null}
                 {!isLoadingHome && matches.length === 0 ? <p className={styles.empty}>No matches yet.</p> : null}
                 <div className={styles.matchList}>
@@ -339,14 +342,28 @@ export function DatingMvpApp() {
 
             <div className={styles.column}>
               <article className={styles.card}>
-                <h2>Discover profiles</h2>
+                <div className={styles.cardHeader}>
+                  <h2>Discover profiles</h2>
+                  <span>{discovery.length}</span>
+                </div>
                 <p className={styles.sectionLead}>Swipe-ready Profile Cards mit klarem Fokus auf Kompatibilität.</p>
                 {isLoadingHome ? <p className={styles.muted}>Loading profiles...</p> : null}
                 {!isLoadingHome && discovery.length === 0 ? <p className={styles.empty}>No profiles available yet.</p> : null}
                 <div className={styles.profileList}>
                   {discovery.map((profile) => (
                     <div key={profile.profileId} className={styles.profileCard}>
-                      <div className={styles.profileTop}>
+                      <div className={styles.profileHeader}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={profile.avatarUrl || "/avatars/default.svg"}
+                          alt={`${profile.displayName} avatar`}
+                          className={styles.avatar}
+                          width={32}
+                          height={32}
+                          onError={(event) => {
+                            event.currentTarget.src = "/avatars/default.svg";
+                          }}
+                        />
                         <h3>{profile.displayName}</h3>
                         <span className={styles.metaChip}>{profile.city || "City not set"}</span>
                       </div>
@@ -366,7 +383,10 @@ export function DatingMvpApp() {
 
             <div className={styles.column}>
               <article className={styles.card}>
-                <h2>Chat</h2>
+                <div className={styles.cardHeader}>
+                  <h2>Chat</h2>
+                  <span>{selectedMatch ? selectedMatch.displayName : "Kein Match"}</span>
+                </div>
                 <p className={styles.sectionLead}>Direkter Match-Chat mit Verlauf und schneller Antwortleiste.</p>
                 {!selectedMatch ? <p className={styles.empty}>No match selected yet.</p> : null}
                 {selectedMatch && isLoadingChat ? <p className={styles.muted}>Loading messages...</p> : null}

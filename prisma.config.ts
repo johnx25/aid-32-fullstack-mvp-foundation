@@ -3,9 +3,9 @@ import { defineConfig } from "prisma/config";
 
 const isMigrateCommand = process.argv.some((arg) => arg.includes("migrate"));
 
-if (isMigrateCommand && !process.env.DIRECT_URL) {
+if (isMigrateCommand && !process.env.DATABASE_URL) {
   throw new Error(
-    "DIRECT_URL is required for Prisma migrate commands. Set DIRECT_URL to a direct PostgreSQL connection string."
+    "DATABASE_URL is required for Prisma migrate commands. Set DATABASE_URL to a PostgreSQL connection string."
   );
 }
 
