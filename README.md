@@ -30,6 +30,7 @@ This repo now targets PostgreSQL for local/test and Supabase connectivity.
   - PostgreSQL/Supabase (example): `postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres?schema=public`
   - Supabase pooled URL (transaction mode)
 - `DIRECT_URL` is preferred for Prisma migration commands and should point to a direct PostgreSQL connection URL when available.
+- Optional alternative: set all of `SUPABASE_DB_USER`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF` and scripts will derive `DATABASE_URL`/`DIRECT_URL`.
 - Optional: `MIGRATION_URL` can explicitly override the migration connection target for CI/runners with network constraints.
 - For non-migration Prisma commands, if `DIRECT_URL` is not set, it falls back to `DATABASE_URL` via `prisma.config.ts`.
 - For migration commands, Prisma resolves connection target in order: `DIRECT_URL`, `MIGRATION_URL`, then `DATABASE_URL`.
@@ -52,6 +53,7 @@ DATABASE_URL='postgresql://...' DIRECT_URL='postgresql://...' npm run test:integ
 ```
 
 If `DIRECT_URL` is unreachable in your runner, set `MIGRATION_URL` to a reachable PostgreSQL endpoint (or allow the script fallback to `DATABASE_URL`).
+The integration/migration scripts reject placeholder values such as `USER/PASSWORD/PROJECT_REF`; use real secrets.
 
 If seed runs fail with `P1001` against `db.<project-ref>.supabase.co:5432`, your environment likely lacks IPv6 routing. Use a pooled Supabase URL in `DATABASE_URL` or set `SEED_DATABASE_URL` to the pooled URL.
 

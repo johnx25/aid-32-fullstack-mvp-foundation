@@ -19,6 +19,7 @@ export MIGRATION_URL=''
 ```
 
 For Supabase, replace both URLs with Supabase-compatible values (pooled for `DATABASE_URL`, direct for `DIRECT_URL`).
+Do not keep placeholders (`USER`, `PASSWORD`, `PROJECT_REF`) in committed/local values; integration scripts now fail fast on placeholder tokens.
 If `DIRECT_URL` is not reachable from the runner, set `MIGRATION_URL` to a reachable PostgreSQL endpoint.
 If the environment cannot route IPv6 to `db.<project-ref>.supabase.co:5432`, set `SEED_DATABASE_URL` to the pooled URL for seed runs.
 

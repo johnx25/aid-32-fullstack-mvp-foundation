@@ -1,12 +1,29 @@
 import { PrismaClient } from "@prisma/client";
 import { hashSecret } from "../src/lib/secret-hash";
 
+function containsPlaceholderToken(value: string | undefined) {
+  return Boolean(
+    value && (value.includes("USER") || value.includes("PASSWORD") || value.includes("PROJECT_REF"))
+  );
+}
+
+if (containsPlaceholderToken(process.env.SEED_DATABASE_URL)) {
+  throw new Error(
+    "SEED_DATABASE_URL contains placeholder tokens (USER/PASSWORD/PROJECT_REF). Set a real Supabase/PostgreSQL URL."
+  );
+}
+
 const seedDatabaseUrl =
   process.env.SEED_DATABASE_URL || process.env.DATABASE_URL || process.env.DIRECT_URL;
 
 if (!seedDatabaseUrl) {
   throw new Error(
     "No database URL available for seed. Set SEED_DATABASE_URL, DATABASE_URL, or DIRECT_URL."
+  );
+}
+if (containsPlaceholderToken(seedDatabaseUrl)) {
+  throw new Error(
+    "Database URL for seed contains placeholder tokens (USER/PASSWORD/PROJECT_REF). Set a real Supabase/PostgreSQL URL."
   );
 }
 const resolvedSeedDatabaseUrl = seedDatabaseUrl;
