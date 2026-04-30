@@ -12,9 +12,10 @@ Date: 2026-04-29 (UTC)
 
 ```bash
 export DATABASE_URL='postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres?schema=public'
+export DIRECT_URL='postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres?schema=public'
 ```
 
-For Supabase, use a reachable PostgreSQL connection string in `DATABASE_URL`.
+For Supabase, keep `DATABASE_URL` as pooled URL when applicable and set `DIRECT_URL` to a direct reachable PostgreSQL connection string.
 
 ## Commands run and outcomes
 
