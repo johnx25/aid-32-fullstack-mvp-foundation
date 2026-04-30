@@ -217,7 +217,12 @@ export function RegisterPage() {
             <p className={styles.secret}>
               One-time secret: <code>{registerSecret}</code>
             </p>
-            <button type="button" onClick={handleContinueAfterSecret} disabled={!postRegisterRedirectTo}>
+            <button
+              type="button"
+              className={styles.continueButton}
+              onClick={handleContinueAfterSecret}
+              disabled={!postRegisterRedirectTo}
+            >
               I have saved my secret
             </button>
           </>
