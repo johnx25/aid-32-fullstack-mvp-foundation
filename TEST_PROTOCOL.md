@@ -4,7 +4,7 @@ Date: 2026-04-29 (UTC)
 
 ## Migration strategy
 
-- PostgreSQL/Supabase migrations are consolidated in `prisma/migrations_postgres/`.
+- PostgreSQL/Supabase migrations are consolidated in `prisma/migrations/`.
 - The legacy SQLite migration path is removed to avoid dual-provider ambiguity during deploy and onboarding.
 - Deterministic bootstrap remains `prisma migrate deploy` against an empty PostgreSQL-compatible database.
 
