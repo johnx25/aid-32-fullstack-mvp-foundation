@@ -33,6 +33,7 @@ This repo now targets PostgreSQL for local/test and Supabase connectivity.
 - Optional alternative: set `SUPABASE_POOLER_URL` and/or `SUPABASE_DIRECT_URL` and scripts will derive `DATABASE_URL`/`DIRECT_URL`.
 - Optional legacy alternative: set all of `SUPABASE_DB_USER`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF` and scripts will derive `DIRECT_URL`.
 - Optional: `MIGRATION_URL` can explicitly override the migration connection target for CI/runners with network constraints.
+- Optional: `MIGRATION_FALLBACK_URL` can provide an additional migration fallback endpoint if both `MIGRATION_URL` and `DATABASE_URL` are unreachable from the runner.
 - For non-migration Prisma commands, if `DIRECT_URL` is not set, it falls back to `DATABASE_URL` via `prisma.config.ts`.
 - For migration commands, Prisma resolves connection target in order: `MIGRATION_URL`, `DIRECT_URL`, then `DATABASE_URL`.
 - For Supabase setups, keep `DATABASE_URL` as pooled URL and set `DIRECT_URL` to the direct connection URL.
@@ -53,7 +54,7 @@ SEED_MODE=demo npm run prisma:seed
 DATABASE_URL='postgresql://...' DIRECT_URL='postgresql://...' npm run test:integration:supabase-flow
 ```
 
-If `DIRECT_URL` is unreachable in your runner, set `MIGRATION_URL` to a reachable PostgreSQL endpoint (or allow the script fallback to `DATABASE_URL`).
+If `DIRECT_URL` is unreachable in your runner, set `MIGRATION_URL` to a reachable PostgreSQL endpoint. If both migration primary target and `DATABASE_URL` are unreachable, set `MIGRATION_FALLBACK_URL`.
 The integration/migration scripts reject placeholder values such as `USER/PASSWORD/PROJECT_REF`; use real secrets.
 
 If seed runs fail with `P1001` against `db.<project-ref>.supabase.co:5432`, your environment likely lacks IPv6 routing. Use a pooled Supabase URL in `DATABASE_URL` or set `SEED_DATABASE_URL` to the pooled URL.

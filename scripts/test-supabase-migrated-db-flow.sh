@@ -9,6 +9,7 @@ if [ -z "${DATABASE_URL:-}" ]; then
 fi
 
 MIGRATION_URL="${MIGRATION_URL:-${DIRECT_URL:-${DATABASE_URL}}}"
+MIGRATION_FALLBACK_URL="${MIGRATION_FALLBACK_URL:-${SEED_DATABASE_URL:-${DATABASE_URL}}}"
 export DIRECT_URL="${DIRECT_URL:-${MIGRATION_URL}}"
 
 PORT="${INTEGRATION_PORT:-3210}"
@@ -18,17 +19,13 @@ HEALTH_OK="false"
 START_LOG="$(mktemp /tmp/aid32-start.XXXXXX.log)"
 HEALTH_JSON="$(mktemp /tmp/aid32-health.XXXXXX.json)"
 
-ensure_migration_target() {
-  local migration_url="${1}"
-  local database_url="${2}"
-  local fallback_allowed="${ALLOW_MIGRATION_URL_FALLBACK:-1}"
-
-  if [ -z "${migration_url}" ]; then
-    echo "ERROR: No migration URL resolved. Set DIRECT_URL, MIGRATION_URL, or DATABASE_URL."
-    exit 1
+is_target_reachable() {
+  local target="${1}"
+  if [ -z "${target}" ]; then
+    return 1
   fi
 
-  if MIGRATION_TARGET_URL="${migration_url}" node -e '
+  MIGRATION_TARGET_URL="${target}" node -e '
 const target = process.env.MIGRATION_TARGET_URL;
 const parsed = new URL(target);
 const socket = require("net").createConnection({
@@ -39,7 +36,21 @@ const socket = require("net").createConnection({
 socket.on("connect", () => { socket.end(); process.exit(0); });
 socket.on("timeout", () => { socket.destroy(); process.exit(1); });
 socket.on("error", () => process.exit(1));
-'; then
+'
+}
+
+ensure_migration_target() {
+  local migration_url="${1}"
+  local database_url="${2}"
+  local migration_fallback_url="${3}"
+  local fallback_allowed="${ALLOW_MIGRATION_URL_FALLBACK:-1}"
+
+  if [ -z "${migration_url}" ]; then
+    echo "ERROR: No migration URL resolved. Set DIRECT_URL, MIGRATION_URL, or DATABASE_URL."
+    exit 1
+  fi
+
+  if is_target_reachable "${migration_url}"; then
     echo "[integration] migration connection target is reachable"
     export DIRECT_URL="${migration_url}"
     return
@@ -52,28 +63,24 @@ socket.on("error", () => process.exit(1));
   fi
 
   if [ "${migration_url}" = "${database_url}" ]; then
-    echo "ERROR: Migration URL matches DATABASE_URL and is unreachable. Provide reachable DIRECT_URL or MIGRATION_URL."
-    exit 1
+    echo "[integration] WARN: migration URL matches DATABASE_URL and is unreachable"
   fi
 
-  if MIGRATION_TARGET_URL="${database_url}" node -e '
-const target = process.env.MIGRATION_TARGET_URL;
-const parsed = new URL(target);
-const socket = require("net").createConnection({
-  host: parsed.hostname,
-  port: Number(parsed.port || 5432),
-  timeout: 4000,
-});
-socket.on("connect", () => { socket.end(); process.exit(0); });
-socket.on("timeout", () => { socket.destroy(); process.exit(1); });
-socket.on("error", () => process.exit(1));
-'; then
+  if is_target_reachable "${database_url}"; then
     echo "[integration] Using DATABASE_URL as migration target fallback"
     export DIRECT_URL="${database_url}"
     return
   fi
 
-  echo "ERROR: Neither migration URL nor DATABASE_URL is reachable from this runner."
+  if [ "${migration_fallback_url}" != "${migration_url}" ] && [ "${migration_fallback_url}" != "${database_url}" ] && is_target_reachable "${migration_fallback_url}"; then
+    echo "[integration] Using MIGRATION_FALLBACK_URL/SEED_DATABASE_URL as migration target fallback"
+    export DIRECT_URL="${migration_fallback_url}"
+    return
+  fi
+
+  echo "ERROR: No reachable migration target from this runner."
+  echo "Tried: MIGRATION_URL/DIRECT_URL, DATABASE_URL, MIGRATION_FALLBACK_URL/SEED_DATABASE_URL"
+  echo "Set MIGRATION_URL (preferred) or MIGRATION_FALLBACK_URL to a reachable PostgreSQL endpoint."
   exit 1
 }
 
@@ -93,7 +100,7 @@ echo "[integration] prisma validate"
 npx prisma validate
 
 echo "[integration] resolve migration target"
-ensure_migration_target "${MIGRATION_URL}" "${DATABASE_URL}"
+ensure_migration_target "${MIGRATION_URL}" "${DATABASE_URL}" "${MIGRATION_FALLBACK_URL}"
 
 echo "[integration] migration target guard"
 bash scripts/verify-migration-target.sh

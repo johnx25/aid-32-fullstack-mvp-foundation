@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+load_env_file() {
+  local env_file="$1"
+  if [ -f "${env_file}" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "${env_file}"
+    set +a
+  fi
+}
+
+load_env_file ".env"
+load_env_file ".env.local"
+
 if [ -n "${SUPABASE_POOLER_URL:-}" ] && [ -z "${DATABASE_URL:-}" ]; then
   export DATABASE_URL="${SUPABASE_POOLER_URL}"
 fi
@@ -43,6 +56,7 @@ validate_url_var() {
 validate_url_var "DATABASE_URL"
 validate_url_var "DIRECT_URL"
 validate_url_var "MIGRATION_URL"
+validate_url_var "MIGRATION_FALLBACK_URL"
 validate_url_var "SEED_DATABASE_URL"
 
 if [ -n "${MIGRATION_URL:-}" ] && [ -z "${DIRECT_URL:-}" ]; then
