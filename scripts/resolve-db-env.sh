@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [ -n "${SUPABASE_POOLER_URL:-}" ] && [ -z "${DATABASE_URL:-}" ]; then
+  export DATABASE_URL="${SUPABASE_POOLER_URL}"
+fi
+
+if [ -n "${SUPABASE_DIRECT_URL:-}" ] && [ -z "${DIRECT_URL:-}" ]; then
+  export DIRECT_URL="${SUPABASE_DIRECT_URL}"
+fi
+
 if [ -n "${SUPABASE_DB_USER:-}" ] || [ -n "${SUPABASE_DB_PASSWORD:-}" ] || [ -n "${SUPABASE_PROJECT_REF:-}" ]; then
   if [ -z "${SUPABASE_DB_USER:-}" ] || [ -z "${SUPABASE_DB_PASSWORD:-}" ] || [ -z "${SUPABASE_PROJECT_REF:-}" ]; then
     echo "ERROR: SUPABASE_DB_USER, SUPABASE_DB_PASSWORD, and SUPABASE_PROJECT_REF must all be set together."
@@ -11,9 +19,6 @@ if [ -n "${SUPABASE_DB_USER:-}" ] || [ -n "${SUPABASE_DB_PASSWORD:-}" ] || [ -n 
     export DIRECT_URL="postgresql://${SUPABASE_DB_USER}:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres?schema=public"
   fi
 
-  if [ -z "${DATABASE_URL:-}" ]; then
-    export DATABASE_URL="postgresql://${SUPABASE_DB_USER}:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres?schema=public"
-  fi
 fi
 
 validate_url_var() {

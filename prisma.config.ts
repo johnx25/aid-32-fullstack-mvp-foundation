@@ -4,6 +4,16 @@ import { defineConfig } from "prisma/config";
 const supabaseUser = process.env.SUPABASE_DB_USER;
 const supabasePassword = process.env.SUPABASE_DB_PASSWORD;
 const supabaseProjectRef = process.env.SUPABASE_PROJECT_REF;
+const supabasePoolerUrl = process.env.SUPABASE_POOLER_URL;
+const supabaseDirectUrl = process.env.SUPABASE_DIRECT_URL;
+
+if (supabasePoolerUrl && !process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = supabasePoolerUrl;
+}
+
+if (supabaseDirectUrl && !process.env.DIRECT_URL) {
+  process.env.DIRECT_URL = supabaseDirectUrl;
+}
 if (supabaseUser || supabasePassword || supabaseProjectRef) {
   if (!supabaseUser || !supabasePassword || !supabaseProjectRef) {
     throw new Error(
@@ -13,9 +23,6 @@ if (supabaseUser || supabasePassword || supabaseProjectRef) {
 
   if (!process.env.DIRECT_URL) {
     process.env.DIRECT_URL = `postgresql://${supabaseUser}:${supabasePassword}@db.${supabaseProjectRef}.supabase.co:5432/postgres?schema=public`;
-  }
-  if (!process.env.DATABASE_URL) {
-    process.env.DATABASE_URL = `postgresql://${supabaseUser}:${supabasePassword}@db.${supabaseProjectRef}.supabase.co:5432/postgres?schema=public`;
   }
 }
 
@@ -43,7 +50,7 @@ if (!isMigrateCommand && !process.env.DIRECT_URL && databaseUrl) {
 }
 
 if (isMigrateCommand) {
-  if (!process.env.DIRECT_URL && migrationUrl) {
+  if (migrationUrl) {
     process.env.DIRECT_URL = migrationUrl;
   }
 

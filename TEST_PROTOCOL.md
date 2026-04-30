@@ -52,4 +52,4 @@ For Supabase verification, provide a reachable Supabase `DATABASE_URL`/`DIRECT_U
 ## Additional notes
 
 - `prisma.config.ts` imports `dotenv/config`, so Prisma CLI commands resolve `.env` values in this repository layout.
-- `.env` and `.env.example` use PostgreSQL sample URLs. For Prisma migrations, the effective target resolves from `DIRECT_URL`, then `MIGRATION_URL`, then `DATABASE_URL`.
+- `.env` and `.env.example` use PostgreSQL sample URLs. For Prisma migrations, the effective target resolves from `MIGRATION_URL`, then `DIRECT_URL`, then `DATABASE_URL`.

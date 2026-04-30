@@ -30,10 +30,11 @@ This repo now targets PostgreSQL for local/test and Supabase connectivity.
   - PostgreSQL/Supabase (example): `postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres?schema=public`
   - Supabase pooled URL (transaction mode)
 - `DIRECT_URL` is preferred for Prisma migration commands and should point to a direct PostgreSQL connection URL when available.
-- Optional alternative: set all of `SUPABASE_DB_USER`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF` and scripts will derive `DATABASE_URL`/`DIRECT_URL`.
+- Optional alternative: set `SUPABASE_POOLER_URL` and/or `SUPABASE_DIRECT_URL` and scripts will derive `DATABASE_URL`/`DIRECT_URL`.
+- Optional legacy alternative: set all of `SUPABASE_DB_USER`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF` and scripts will derive `DIRECT_URL`.
 - Optional: `MIGRATION_URL` can explicitly override the migration connection target for CI/runners with network constraints.
 - For non-migration Prisma commands, if `DIRECT_URL` is not set, it falls back to `DATABASE_URL` via `prisma.config.ts`.
-- For migration commands, Prisma resolves connection target in order: `DIRECT_URL`, `MIGRATION_URL`, then `DATABASE_URL`.
+- For migration commands, Prisma resolves connection target in order: `MIGRATION_URL`, `DIRECT_URL`, then `DATABASE_URL`.
 - For Supabase setups, keep `DATABASE_URL` as pooled URL and set `DIRECT_URL` to the direct connection URL.
 - Optional for seed runs: `SEED_DATABASE_URL` overrides the Prisma seed connection target.
 
