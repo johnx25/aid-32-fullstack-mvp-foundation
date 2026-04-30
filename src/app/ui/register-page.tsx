@@ -133,6 +133,7 @@ export function RegisterPage() {
   function handleContinueAfterSecret() {
     if (!postRegisterRedirectTo) return;
     router.replace(postRegisterRedirectTo);
+    router.refresh();
   }
 
   return (
@@ -144,14 +145,20 @@ export function RegisterPage() {
       </section>
 
       <section className={styles.panel}>
-        <p className={styles.help}>{isCheckingSession ? "Checking session..." : sessionCheckError || "No active session."}</p>
+        <header className={styles.panelHeader}>
+          <h2>Register for AID-32</h2>
+          <p className={styles.help}>{isCheckingSession ? "Checking session..." : sessionCheckError || "No active session."}</p>
+        </header>
+
         {error ? <p className={styles.error}>{error}</p> : null}
         {successNote ? <p className={styles.success}>{successNote}</p> : null}
 
         <form onSubmit={handleRegister} className={styles.form}>
-          <label>
+          <label htmlFor="register-name">
             Name
             <input
+              id="register-name"
+              name="name"
               type="text"
               placeholder="Alex"
               autoComplete="name"
@@ -163,21 +170,28 @@ export function RegisterPage() {
             />
           </label>
 
-          <label>
+          <label htmlFor="register-email">
             Email
             <input
+              id="register-email"
+              name="email"
               type="email"
               placeholder="you@example.com"
               autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               value={registerForm.email}
               onChange={(e) => setRegisterForm((prev) => ({ ...prev, email: e.target.value }))}
               required
             />
           </label>
 
-          <label>
+          <label htmlFor="register-city">
             City
             <input
+              id="register-city"
+              name="city"
               type="text"
               placeholder="Berlin"
               autoComplete="address-level2"
@@ -187,9 +201,11 @@ export function RegisterPage() {
             />
           </label>
 
-          <label>
+          <label htmlFor="register-bio">
             Bio
             <textarea
+              id="register-bio"
+              name="bio"
               rows={4}
               placeholder="Tell others what you are into"
               maxLength={500}
@@ -198,9 +214,11 @@ export function RegisterPage() {
             />
           </label>
 
-          <label>
+          <label htmlFor="register-interests">
             Interests
             <input
+              id="register-interests"
+              name="interests"
               type="text"
               placeholder="hiking, coffee, live music"
               maxLength={500}
@@ -209,9 +227,11 @@ export function RegisterPage() {
             />
           </label>
 
-          <label>
+          <label htmlFor="register-invite-code">
             Invite code
             <input
+              id="register-invite-code"
+              name="inviteCode"
               type="text"
               placeholder="Optional unless beta mode is on"
               autoComplete="off"
