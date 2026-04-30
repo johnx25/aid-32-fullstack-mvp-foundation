@@ -4,10 +4,35 @@ set -euo pipefail
 load_env_file() {
   local env_file="$1"
   if [ -f "${env_file}" ]; then
+    local had_database_url="${DATABASE_URL+x}"
+    local had_direct_url="${DIRECT_URL+x}"
+    local had_migration_url="${MIGRATION_URL+x}"
+    local had_migration_fallback_url="${MIGRATION_FALLBACK_URL+x}"
+    local had_seed_database_url="${SEED_DATABASE_URL+x}"
+    local had_supabase_pooler_url="${SUPABASE_POOLER_URL+x}"
+    local had_supabase_direct_url="${SUPABASE_DIRECT_URL+x}"
+
+    local prev_database_url="${DATABASE_URL:-}"
+    local prev_direct_url="${DIRECT_URL:-}"
+    local prev_migration_url="${MIGRATION_URL:-}"
+    local prev_migration_fallback_url="${MIGRATION_FALLBACK_URL:-}"
+    local prev_seed_database_url="${SEED_DATABASE_URL:-}"
+    local prev_supabase_pooler_url="${SUPABASE_POOLER_URL:-}"
+    local prev_supabase_direct_url="${SUPABASE_DIRECT_URL:-}"
+
     set -a
     # shellcheck disable=SC1090
     source "${env_file}"
     set +a
+
+    # Keep runner-provided env values authoritative over .env defaults.
+    if [ -n "${had_database_url}" ]; then export DATABASE_URL="${prev_database_url}"; fi
+    if [ -n "${had_direct_url}" ]; then export DIRECT_URL="${prev_direct_url}"; fi
+    if [ -n "${had_migration_url}" ]; then export MIGRATION_URL="${prev_migration_url}"; fi
+    if [ -n "${had_migration_fallback_url}" ]; then export MIGRATION_FALLBACK_URL="${prev_migration_fallback_url}"; fi
+    if [ -n "${had_seed_database_url}" ]; then export SEED_DATABASE_URL="${prev_seed_database_url}"; fi
+    if [ -n "${had_supabase_pooler_url}" ]; then export SUPABASE_POOLER_URL="${prev_supabase_pooler_url}"; fi
+    if [ -n "${had_supabase_direct_url}" ]; then export SUPABASE_DIRECT_URL="${prev_supabase_direct_url}"; fi
   fi
 }
 
