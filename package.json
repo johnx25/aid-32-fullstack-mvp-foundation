@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:register-page": "tsx --test src/app/ui/register-page.logic.test.ts",
+    "test:integration:supabase-flow": "bash ./scripts/test-supabase-migrated-db-flow.sh",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",

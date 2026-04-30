@@ -42,6 +42,11 @@ npm run prisma:migrate:deploy
 SEED_MODE=demo npm run prisma:seed
 ```
 
+4. Run the migrated DB integration flow (migration + seed + healthcheck):
+```bash
+DATABASE_URL='postgresql://...' DIRECT_URL='postgresql://...' npm run test:integration:supabase-flow
+```
+
 If Supabase secrets are unavailable, use any local PostgreSQL instance with the sample `DATABASE_URL` above for reproducible validation.
 
 ## Migration safety
