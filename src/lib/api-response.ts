@@ -8,6 +8,7 @@ export type ApiErrorCode =
   | "NOT_FOUND"
   | "CONFLICT"
   | "TOO_MANY_REQUESTS"
+  | "DATABASE_CONFIG_ERROR"
   | "INTERNAL_ERROR";
 
 export function ok<T>(data: T, status = 200) {
