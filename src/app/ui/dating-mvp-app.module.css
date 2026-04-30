@@ -87,6 +87,21 @@
   font-size: 1.04rem;
 }
 
+.cardHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.cardHeader span {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #4b5e7b;
+}
+
 .card form,
 .card {
   display: grid;
@@ -112,7 +127,7 @@
 
 .card input:focus,
 .card textarea:focus {
-  outline: 2px solid #0f6dce;
+  outline: 2px solid var(--primary-color);
   outline-offset: 1px;
 }
 
@@ -126,7 +141,11 @@
 
 .primaryButton {
   color: #ffffff;
-  background: linear-gradient(92deg, #0055bc 0%, #0080d8 100%);
+  background: var(--primary-color);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--primary-color-hover);
 }
 
 .primaryButton:disabled {
@@ -163,6 +182,27 @@
   background: #fdfefe;
   display: grid;
   gap: 0.42rem;
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+
+.profileCard:hover {
+  transform: translateY(-2px);
+  border-color: #9ebde4;
+}
+
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #cfdbec;
+  background: #eef4ff;
 }
 
 .profileCard h3 {
@@ -177,11 +217,17 @@
   cursor: pointer;
   display: grid;
   gap: 0.16rem;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.matchItem:hover {
+  border-color: #acc4e6;
+  transform: translateY(-1px);
 }
 
 .matchItemActive {
-  border-color: #0f6dce;
-  background: #e9f3ff;
+  border-color: var(--primary-color);
+  background: var(--primary-color-soft);
 }
 
 .messages {
