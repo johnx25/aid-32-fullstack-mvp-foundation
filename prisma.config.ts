@@ -50,7 +50,7 @@ if (!isMigrateCommand && !process.env.DIRECT_URL && databaseUrl) {
 }
 
 if (isMigrateCommand) {
-  if (migrationUrl) {
+  if (!process.env.DIRECT_URL && migrationUrl) {
     process.env.DIRECT_URL = migrationUrl;
   }
 
