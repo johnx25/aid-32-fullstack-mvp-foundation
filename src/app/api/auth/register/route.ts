@@ -87,6 +87,7 @@ export async function POST(request: Request) {
     }
 
     const secret = customSecret || generateSecret();
+    const shouldReturnGeneratedSecret = !customSecret;
     const user = await prisma.user.create({
       data: {
         email,
@@ -108,9 +109,9 @@ export async function POST(request: Request) {
         email: user.email,
         displayName: user.displayName,
         profile: user.profile,
-        secret,
         authTokenExpiresAt: new Date(auth.expiresAt * 1000).toISOString(),
         redirectTo: "/",
+        ...(shouldReturnGeneratedSecret ? { secret } : {}),
       },
       201,
     );

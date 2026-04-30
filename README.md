@@ -57,7 +57,12 @@ If Supabase secrets are unavailable, use any local PostgreSQL instance with the 
 
 - PostgreSQL/Supabase migrations are consolidated under `prisma/migrations/` (configured via `prisma.config.ts`).
 - The repository no longer maintains a parallel SQLite migration path, reducing deploy/onboarding ambiguity.
-- Safe execution path for this repo stage: start with an empty PostgreSQL database, run `npm run prisma:migrate:deploy`, then seed if needed.
+- Existing environment upgrade path:
+  - If your database already contains `User/Profile/Like/Match/Message/Task` tables, do not run `prisma migrate deploy` first.
+  - Verify the current schema is compatible with `prisma/migrations/20260429150000_postgres_baseline/migration.sql`.
+  - Mark the baseline as already applied: `npx prisma migrate resolve --applied 20260429150000_postgres_baseline`
+  - Then run: `npm run prisma:migrate:deploy`
+- Guardrail: `scripts/verify-migration-target.sh` blocks `migrate deploy` when app tables already exist but the baseline is not yet recorded in `_prisma_migrations`.
 
 ## Beta launch controls
 
@@ -71,7 +76,7 @@ Use these env vars in `.env`:
 
 Current MVP auth uses registration secrets with hashed storage:
 
-- `POST /api/auth/register` returns a one-time `secret`, sets a signed auth token in an HttpOnly cookie, and includes `authTokenExpiresAt` (ISO timestamp).
+- `POST /api/auth/register` returns a one-time `secret` only when the server generated it (client-supplied secrets are never echoed back), sets a signed auth token in an HttpOnly cookie, and includes `authTokenExpiresAt` (ISO timestamp).
 - `POST /api/auth/login` requires `email` + `secret`, sets a signed auth token in an HttpOnly cookie, and includes `authTokenExpiresAt` (ISO timestamp).
 - `POST /api/auth/logout` clears the auth cookie.
 - `GET /api/auth/session` reads the current authenticated session from cookie.

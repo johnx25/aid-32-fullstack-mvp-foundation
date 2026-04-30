@@ -30,6 +30,9 @@ npm run prisma:generate
 echo "[integration] prisma validate"
 npx prisma validate
 
+echo "[integration] migration target guard"
+bash scripts/verify-migration-target.sh
+
 echo "[integration] prisma migrate deploy"
 npm run prisma:migrate:deploy
 

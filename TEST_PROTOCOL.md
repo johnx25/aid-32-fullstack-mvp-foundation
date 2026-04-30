@@ -7,6 +7,8 @@ Date: 2026-04-29 (UTC)
 - PostgreSQL/Supabase migrations are consolidated in `prisma/migrations/`.
 - The legacy SQLite migration path is removed to avoid dual-provider ambiguity during deploy and onboarding.
 - Deterministic bootstrap remains `prisma migrate deploy` against an empty PostgreSQL-compatible database.
+- Existing DBs must be baselined before deploy: run `npx prisma migrate resolve --applied 20260429150000_postgres_baseline` after schema compatibility verification.
+- `scripts/verify-migration-target.sh` enforces this by failing when app tables already exist but the baseline is not marked as applied.
 
 ## Required environment
 
@@ -26,7 +28,7 @@ If the environment cannot route IPv6 to `db.<project-ref>.supabase.co:5432`, set
 4. `npm run build` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS
 5. `npm run prisma:migrate:deploy` (with `DATABASE_URL` and `DIRECT_URL` set) -> PASS on a reachable PostgreSQL/Supabase target
 6. `GET /api/health/db` against a running app + reachable DB -> PASS (`200`, `status: ok`)
-7. `npm run test:integration:supabase-flow` -> PASS path for full migrated DB flow (generate/validate/migrate/seed/build/start/healthcheck)
+7. `npm run test:integration:supabase-flow` -> PASS path for full migrated DB flow (generate/validate/guard/migrate/seed/build/start/healthcheck)
 
 ## Deterministic validation path (preferred)
 
