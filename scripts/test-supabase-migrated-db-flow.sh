@@ -53,6 +53,7 @@ ensure_migration_target() {
   if is_target_reachable "${migration_url}"; then
     echo "[integration] migration connection target is reachable"
     export DIRECT_URL="${migration_url}"
+    export MIGRATION_URL="${migration_url}"
     return
   fi
 
@@ -69,12 +70,14 @@ ensure_migration_target() {
   if is_target_reachable "${database_url}"; then
     echo "[integration] Using DATABASE_URL as migration target fallback"
     export DIRECT_URL="${database_url}"
+    export MIGRATION_URL="${database_url}"
     return
   fi
 
   if [ "${migration_fallback_url}" != "${migration_url}" ] && [ "${migration_fallback_url}" != "${database_url}" ] && is_target_reachable "${migration_fallback_url}"; then
     echo "[integration] Using MIGRATION_FALLBACK_URL/SEED_DATABASE_URL as migration target fallback"
     export DIRECT_URL="${migration_fallback_url}"
+    export MIGRATION_URL="${migration_fallback_url}"
     return
   fi
 

@@ -3,7 +3,10 @@ import { PrismaClient } from "@prisma/client";
 const BASELINE_MIGRATION = "20260429150000_postgres_baseline";
 const APP_TABLES = ["User", "Profile", "Like", "Match", "Message", "Task"];
 
-const prisma = new PrismaClient();
+const migrationTargetUrl = process.env.DIRECT_URL ?? process.env.MIGRATION_URL ?? process.env.DATABASE_URL;
+const prisma = migrationTargetUrl
+  ? new PrismaClient({ datasources: { db: { url: migrationTargetUrl } } })
+  : new PrismaClient();
 
 async function tableExists(tableName) {
   const rows = await prisma.$queryRawUnsafe(

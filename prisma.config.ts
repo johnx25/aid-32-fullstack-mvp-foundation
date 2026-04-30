@@ -28,12 +28,19 @@ if (supabaseUser || supabasePassword || supabaseProjectRef) {
 
 const hasPlaceholderToken = (value: string | undefined) =>
   Boolean(value && (value.includes("USER") || value.includes("PASSWORD") || value.includes("PROJECT_REF")));
-for (const [name, value] of Object.entries({
-  DATABASE_URL: process.env.DATABASE_URL,
-  DIRECT_URL: process.env.DIRECT_URL,
-  MIGRATION_URL: process.env.MIGRATION_URL,
-  SEED_DATABASE_URL: process.env.SEED_DATABASE_URL,
-})) {
+const isMigrateCommand = process.argv.some((arg) => arg.includes("migrate"));
+const isGenerateCommand = process.argv.some((arg) => arg.includes("generate"));
+
+const urlsToValidate = isGenerateCommand
+  ? {}
+  : {
+      DATABASE_URL: process.env.DATABASE_URL,
+      DIRECT_URL: process.env.DIRECT_URL,
+      MIGRATION_URL: process.env.MIGRATION_URL,
+      SEED_DATABASE_URL: process.env.SEED_DATABASE_URL,
+    };
+
+for (const [name, value] of Object.entries(urlsToValidate)) {
   if (hasPlaceholderToken(value)) {
     throw new Error(
       `${name} contains placeholder tokens (USER/PASSWORD/PROJECT_REF). Set a real Supabase/PostgreSQL URL.`
@@ -41,7 +48,6 @@ for (const [name, value] of Object.entries({
   }
 }
 
-const isMigrateCommand = process.argv.some((arg) => arg.includes("migrate"));
 const databaseUrl = process.env.DATABASE_URL;
 const migrationUrl = process.env.MIGRATION_URL;
 
@@ -50,7 +56,7 @@ if (!isMigrateCommand && !process.env.DIRECT_URL && databaseUrl) {
 }
 
 if (isMigrateCommand) {
-  if (!process.env.DIRECT_URL && migrationUrl) {
+  if (migrationUrl) {
     process.env.DIRECT_URL = migrationUrl;
   }
 
