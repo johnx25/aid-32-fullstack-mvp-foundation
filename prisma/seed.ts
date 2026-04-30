@@ -9,16 +9,17 @@ if (!seedDatabaseUrl) {
     "No database URL available for seed. Set SEED_DATABASE_URL, DATABASE_URL, or DIRECT_URL."
   );
 }
+const resolvedSeedDatabaseUrl = seedDatabaseUrl;
 
 const prisma = new PrismaClient({
-  datasourceUrl: seedDatabaseUrl,
+  datasourceUrl: resolvedSeedDatabaseUrl,
 });
 
 function printSupabaseReachabilityHint(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   const isReachabilityError =
     message.includes("P1001") || message.includes("Can't reach database server");
-  const isSupabaseDirect = seedDatabaseUrl.includes(".supabase.co:5432");
+  const isSupabaseDirect = resolvedSeedDatabaseUrl.includes(".supabase.co:5432");
 
   if (!isReachabilityError || !isSupabaseDirect) {
     return;
