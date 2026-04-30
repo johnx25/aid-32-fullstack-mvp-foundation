@@ -15,9 +15,11 @@ Date: 2026-04-29 (UTC)
 ```bash
 export DATABASE_URL='postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres?schema=public'
 export DIRECT_URL='postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres?schema=public'
+export MIGRATION_URL=''
 ```
 
 For Supabase, replace both URLs with Supabase-compatible values (pooled for `DATABASE_URL`, direct for `DIRECT_URL`).
+If `DIRECT_URL` is not reachable from the runner, set `MIGRATION_URL` to a reachable PostgreSQL endpoint.
 If the environment cannot route IPv6 to `db.<project-ref>.supabase.co:5432`, set `SEED_DATABASE_URL` to the pooled URL for seed runs.
 
 ## Commands run and outcomes
@@ -49,4 +51,4 @@ For Supabase verification, provide a reachable Supabase `DATABASE_URL`/`DIRECT_U
 ## Additional notes
 
 - `prisma.config.ts` imports `dotenv/config`, so Prisma CLI commands resolve `.env` values in this repository layout.
-- `.env` and `.env.example` use PostgreSQL sample URLs. `DIRECT_URL` is required for Prisma migrations and should be configured as a direct PostgreSQL URL.
+- `.env` and `.env.example` use PostgreSQL sample URLs. For Prisma migrations, the effective target resolves from `DIRECT_URL`, then `MIGRATION_URL`, then `DATABASE_URL`.
