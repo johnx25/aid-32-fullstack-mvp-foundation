@@ -95,10 +95,15 @@ test("isValidRegisterResponseData rejects invalid payloads", () => {
 });
 
 test("mapErrorMessage maps known API codes and falls back for unknown", () => {
-  assert.equal(mapErrorMessage({ code: "CONFLICT", message: "x" }, "fallback"), "That email is already registered.");
+  assert.equal(mapErrorMessage({ code: "CONFLICT", message: "x" }, "fallback"), "An account with this email already exists.");
+  // FORBIDDEN now passes the server message through (covers 18+, community, invite)
   assert.equal(
-    mapErrorMessage({ code: "FORBIDDEN", message: "x" }, "fallback"),
-    "A valid invite code is required right now.",
+    mapErrorMessage({ code: "FORBIDDEN", message: "You must be at least 18 years old to register." }, "fallback"),
+    "You must be at least 18 years old to register.",
+  );
+  assert.equal(
+    mapErrorMessage({ code: "FORBIDDEN", message: "" }, "fallback"),
+    "Registration not permitted.",
   );
   assert.equal(
     mapErrorMessage({ code: "TOO_MANY_REQUESTS", message: "x" }, "fallback"),

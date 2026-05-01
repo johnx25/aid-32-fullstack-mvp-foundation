@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { fail, ok } from "@/lib/api-response";
 import { Prisma } from "@prisma/client";
-import { randomBytes } from "crypto";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { log } from "@/lib/logger";
 import { isValidEmail, normalizeEmail, sanitizeUserText } from "@/lib/validation";
@@ -10,10 +9,6 @@ import { assertAuthConfig, AUTH_TOKEN_COOKIE_NAME, createUserAuthToken, getAuthC
 
 function asOptionalString(value: unknown) {
   return typeof value === "string" ? value : undefined;
-}
-
-function generateSecret() {
-  return randomBytes(18).toString("base64url");
 }
 
 function isBetaInviteAccepted(inviteCode: string | undefined) {
