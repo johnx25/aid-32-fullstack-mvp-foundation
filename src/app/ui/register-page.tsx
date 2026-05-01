@@ -74,7 +74,9 @@ export function RegisterPage() {
       }
     }
     void checkSession();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [router]);
 
   async function handleRegister(event: FormEvent<HTMLFormElement>) {
@@ -111,26 +113,24 @@ export function RegisterPage() {
     }
   }
 
-  if (isCheckingSession) {
-    return (
-      <main className={styles.page}>
-        <section className={styles.panel}>
-          <p className={styles.help}>Checking session...</p>
-        </section>
-      </main>
-    );
-  }
-
   return (
     <main className={styles.page}>
+      {/* Left hero panel */}
       <section className={styles.hero}>
-        <h1>Create your account</h1>
-        <p className={styles.subtitle}>Join the Tamil dating community. Takes less than a minute.</p>
+        <p className={styles.kicker}>Tamil Dating</p>
+        <h1>Find your person — without getting ghosted.</h1>
+        <p className={styles.subtitle}>
+          The serious dating platform built exclusively for the Tamil community. Real profiles, real conversations.
+        </p>
       </section>
 
+      {/* Right form panel */}
       <section className={styles.panel}>
         <header className={styles.panelHeader}>
-          <h2>Sign up</h2>
+          <h2>Create your account</h2>
+          <p className={styles.help}>
+            {isCheckingSession ? "Checking session…" : "Join thousands of Tamil singles."}
+          </p>
         </header>
 
         {error ? <p className={styles.error}>{error}</p> : null}
@@ -183,8 +183,8 @@ export function RegisterPage() {
             />
           </label>
 
-          <button type="submit" disabled={isRegistering}>
-            {isRegistering ? "Creating account..." : "Create account"}
+          <button type="submit" disabled={isRegistering || isCheckingSession}>
+            {isRegistering ? "Creating account…" : "Create account"}
           </button>
         </form>
 
