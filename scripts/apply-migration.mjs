@@ -36,21 +36,32 @@ async function main() {
 
   console.log(`Running ${stmts.length} statements...`);
 
+  let hadError = false;
+
   for (const stmt of stmts) {
     try {
       await prisma.$executeRawUnsafe(stmt);
-      console.log(`✓ ${stmt.slice(0, 80).replace(/\n/g, ' ')}`);
+      console.log(`\u2713 ${stmt.slice(0, 80).replace(/\n/g, ' ')}`);
     } catch (e) {
       if (e.message.includes('already exists') || e.message.includes('duplicate')) {
         console.log(`- SKIP (exists): ${stmt.slice(0, 60).replace(/\n/g, ' ')}`);
       } else {
-        console.error(`✗ ERROR: ${e.message.slice(0, 120)}`);
+        console.error(`\u2717 ERROR: ${e.message.slice(0, 120)}`);
+        console.error(`  Statement: ${stmt.slice(0, 120).replace(/\n/g, ' ')}`);
+        hadError = true;
       }
     }
   }
 
   const tables = await prisma.$queryRaw`SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename;`;
-  console.log(`\nTables: ${tables.map(t => t.tablename).join(', ')}`);
+  console.log(`\nTables found: ${tables.map(t => t.tablename).join(', ')}`);
+
+  if (hadError) {
+    console.error('\n⚠️  Migration completed with errors. Review the output above.');
+    process.exit(1);
+  }
+
+  console.log('\n✅ Migration applied successfully.');
 }
 
 main().catch(e => { console.error(e.message); process.exit(1); }).finally(() => prisma.$disconnect());
