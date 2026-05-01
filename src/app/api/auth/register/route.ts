@@ -140,15 +140,14 @@ export async function POST(request: Request) {
     );
     response.cookies.set(AUTH_TOKEN_COOKIE_NAME, auth.token, getAuthCookieOptions());
     return response;
-  } catch (error) {
-    if (error instanceof Error && error.message === "AUTH_CONFIG_MISSING") {
+  } catch (err: unknown) {
+    const knownErr = err instanceof Error ? err : null;
+    if (knownErr?.message === "AUTH_CONFIG_MISSING") {
       log("error", "auth.register.config_missing", {});
       return fail(500, "INTERNAL_ERROR", "Auth configuration is missing");
     }
-    log("error", "auth.register.error", {
-      reason: error instanceof Error ? error.message : "unknown",
-    });
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+    log("error", "auth.register.error", { reason: knownErr?.message ?? "unknown" });
+    if (err instanceof Prisma.PrismaClientKnownRequestError && (err as Prisma.PrismaClientKnownRequestError).code === "P2002") {
       return fail(409, "CONFLICT", "An account with this email already exists.");
     }
     return fail(500, "INTERNAL_ERROR", "Internal server error");
