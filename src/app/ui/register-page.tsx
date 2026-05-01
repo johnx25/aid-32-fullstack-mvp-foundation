@@ -4,26 +4,52 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./register-page.module.css";
-import {
-  ApiResult,
-  RegisterResponseData,
-  isValidRegisterResponseData,
-  mapErrorMessage,
-  normalizeRegisterInput,
-} from "./register-page.logic";
+
+type ApiResult<T> = { success: boolean; data?: T; error?: { code: string; message: string } };
+
+type RegisterResponseData = {
+  userId: number;
+  email: string;
+  displayName: string;
+  authTokenExpiresAt: string;
+  redirectTo: string;
+};
+
+function isValidRegisterResponseData(data: unknown): data is RegisterResponseData {
+  if (!data || typeof data !== "object") return false;
+  const v = data as Partial<RegisterResponseData>;
+  return (
+    typeof v.userId === "number" &&
+    v.userId > 0 &&
+    typeof v.email === "string" &&
+    v.email.length > 0 &&
+    typeof v.redirectTo === "string" &&
+    v.redirectTo.length > 0
+  );
+}
+
+function mapErrorMessage(error: ApiResult<unknown>["error"], fallback: string) {
+  if (!error) return fallback;
+  if (error.code === "CONFLICT") return "An account with this email already exists.";
+  if (error.code === "FORBIDDEN") return error.message || "Registration not permitted.";
+  if (error.code === "TOO_MANY_REQUESTS") return "Too many attempts. Please wait and try again.";
+  return error.message || fallback;
+}
 
 async function apiRequest<T>(path: string, options?: RequestInit): Promise<ApiResult<T>> {
   const headers = new Headers(options?.headers || {});
   headers.set("Content-Type", "application/json");
-
   const response = await fetch(path, { ...options, headers });
   const body = (await response.json().catch(() => null)) as ApiResult<T> | null;
   if (!body) {
     return { success: false, error: { code: "BAD_RESPONSE", message: "Server response could not be read." } };
   }
-
   return body;
 }
+
+const MAX_BIRTH_DATE = new Date(new Date().setFullYear(new Date().getFullYear() - 18))
+  .toISOString()
+  .split("T")[0];
 
 export function RegisterPage() {
   const router = useRouter();
@@ -31,50 +57,24 @@ export function RegisterPage() {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState("");
-  const [sessionCheckError, setSessionCheckError] = useState("");
-  const [successNote, setSuccessNote] = useState("");
-  const [registerSecret, setRegisterSecret] = useState("");
-  const [postRegisterRedirectTo, setPostRegisterRedirectTo] = useState("");
-
-  const [registerForm, setRegisterForm] = useState({
-    email: "",
-    name: "",
-    bio: "",
-    city: "",
-    interests: "",
-    inviteCode: "",
-    birthDate: "",
-    gender: "",
-  });
+  const [form, setForm] = useState({ email: "", password: "", birthDate: "" });
 
   useEffect(() => {
     let mounted = true;
-
     async function checkSession() {
       try {
-        const sessionRes = await apiRequest<{ userId: number }>("/api/auth/session", { method: "GET" });
+        const res = await apiRequest<{ userId: number }>("/api/auth/session", { method: "GET" });
         if (!mounted) return;
-        if (sessionRes.success) {
+        if (res.success) {
           router.replace("/");
           return;
         }
-        setSessionCheckError("No active session found. You can create a new account below.");
-      } catch {
-        if (mounted) {
-          setSessionCheckError("Session check failed. You can still register.");
-        }
       } finally {
-        if (mounted) {
-          setIsCheckingSession(false);
-        }
+        if (mounted) setIsCheckingSession(false);
       }
     }
-
     void checkSession();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [router]);
 
   async function handleRegister(event: FormEvent<HTMLFormElement>) {
@@ -82,29 +82,15 @@ export function RegisterPage() {
     if (isRegistering) return;
 
     setError("");
-    setSuccessNote("");
-    setRegisterSecret("");
-    setPostRegisterRedirectTo("");
     setIsRegistering(true);
 
     try {
-      const nextRegisterForm = normalizeRegisterInput(registerForm);
-      if (!nextRegisterForm.displayName || !nextRegisterForm.email) {
-        setError("Name and email are required.");
-        return;
-      }
       const res = await apiRequest<RegisterResponseData>("/api/auth/register", {
         method: "POST",
         body: JSON.stringify({
-          email: nextRegisterForm.email,
-          displayName: nextRegisterForm.displayName,
-          bio: nextRegisterForm.bio,
-          city: nextRegisterForm.city,
-          interests: nextRegisterForm.interests,
-          inviteCode: nextRegisterForm.inviteCode,
-          birthDate: registerForm.birthDate,
-          gender: registerForm.gender,
-          community: "tamil",
+          email: form.email.trim().toLowerCase(),
+          password: form.password,
+          birthDate: form.birthDate,
         }),
       });
 
@@ -118,63 +104,38 @@ export function RegisterPage() {
         return;
       }
 
-      setRegisterForm((prev) => ({
-        ...prev,
-        email: nextRegisterForm.email,
-        name: nextRegisterForm.displayName,
-        bio: nextRegisterForm.bio,
-        city: nextRegisterForm.city,
-        interests: nextRegisterForm.interests,
-        inviteCode: nextRegisterForm.inviteCode,
-      }));
-      setRegisterSecret(res.data.secret);
-      setPostRegisterRedirectTo(res.data.redirectTo);
-      setSuccessNote("Account created. Save your one-time secret, then continue.");
+      router.replace(res.data.redirectTo);
+      router.refresh();
     } finally {
       setIsRegistering(false);
     }
   }
 
-  function handleContinueAfterSecret() {
-    if (!postRegisterRedirectTo) return;
-    router.replace(postRegisterRedirectTo);
-    router.refresh();
+  if (isCheckingSession) {
+    return (
+      <main className={styles.page}>
+        <section className={styles.panel}>
+          <p className={styles.help}>Checking session...</p>
+        </section>
+      </main>
+    );
   }
 
   return (
     <main className={styles.page}>
       <section className={styles.hero}>
-        <p className={styles.kicker}>AID-32</p>
         <h1>Create your account</h1>
-        <p className={styles.subtitle}>Sign up to start matching, chatting, and building your profile.</p>
+        <p className={styles.subtitle}>Join the Tamil dating community. Takes less than a minute.</p>
       </section>
 
       <section className={styles.panel}>
         <header className={styles.panelHeader}>
-          <h2>Register for AID-32</h2>
-          <p className={styles.help}>{isCheckingSession ? "Checking session..." : sessionCheckError || "No active session."}</p>
+          <h2>Sign up</h2>
         </header>
 
         {error ? <p className={styles.error}>{error}</p> : null}
-        {successNote ? <p className={styles.success}>{successNote}</p> : null}
 
         <form onSubmit={handleRegister} className={styles.form}>
-          <label htmlFor="register-name">
-            Name
-            <input
-              id="register-name"
-              name="name"
-              type="text"
-              placeholder="Alex"
-              autoComplete="name"
-              minLength={2}
-              maxLength={80}
-              value={registerForm.name}
-              onChange={(e) => setRegisterForm((prev) => ({ ...prev, name: e.target.value }))}
-              required
-            />
-          </label>
-
           <label htmlFor="register-email">
             Email
             <input
@@ -186,8 +147,24 @@ export function RegisterPage() {
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              value={registerForm.email}
-              onChange={(e) => setRegisterForm((prev) => ({ ...prev, email: e.target.value }))}
+              value={form.email}
+              onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+              required
+            />
+          </label>
+
+          <label htmlFor="register-password">
+            Password
+            <input
+              id="register-password"
+              name="password"
+              type="password"
+              placeholder="At least 8 characters"
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={128}
+              value={form.password}
+              onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
               required
             />
           </label>
@@ -199,79 +176,10 @@ export function RegisterPage() {
               name="birthDate"
               type="date"
               autoComplete="bday"
-              max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split("T")[0]}
-              value={registerForm.birthDate}
-              onChange={(e) => setRegisterForm((prev) => ({ ...prev, birthDate: e.target.value }))}
+              max={MAX_BIRTH_DATE}
+              value={form.birthDate}
+              onChange={(e) => setForm((prev) => ({ ...prev, birthDate: e.target.value }))}
               required
-            />
-          </label>
-
-          <label htmlFor="register-gender">
-            Gender
-            <select
-              id="register-gender"
-              name="gender"
-              value={registerForm.gender}
-              onChange={(e) => setRegisterForm((prev) => ({ ...prev, gender: e.target.value }))}
-            >
-              <option value="">Prefer not to say</option>
-              <option value="man">Man</option>
-              <option value="woman">Woman</option>
-              <option value="non-binary">Non-binary</option>
-              <option value="other">Other</option>
-            </select>
-          </label>
-
-          <label htmlFor="register-city">
-            City
-            <input
-              id="register-city"
-              name="city"
-              type="text"
-              placeholder="Berlin"
-              autoComplete="address-level2"
-              maxLength={120}
-              value={registerForm.city}
-              onChange={(e) => setRegisterForm((prev) => ({ ...prev, city: e.target.value }))}
-            />
-          </label>
-
-          <label htmlFor="register-bio">
-            Bio
-            <textarea
-              id="register-bio"
-              name="bio"
-              rows={4}
-              placeholder="Tell others what you are into"
-              maxLength={500}
-              value={registerForm.bio}
-              onChange={(e) => setRegisterForm((prev) => ({ ...prev, bio: e.target.value }))}
-            />
-          </label>
-
-          <label htmlFor="register-interests">
-            Interests
-            <input
-              id="register-interests"
-              name="interests"
-              type="text"
-              placeholder="hiking, coffee, live music"
-              maxLength={500}
-              value={registerForm.interests}
-              onChange={(e) => setRegisterForm((prev) => ({ ...prev, interests: e.target.value }))}
-            />
-          </label>
-
-          <label htmlFor="register-invite-code">
-            Invite code
-            <input
-              id="register-invite-code"
-              name="inviteCode"
-              type="text"
-              placeholder="Optional unless beta mode is on"
-              autoComplete="off"
-              value={registerForm.inviteCode}
-              onChange={(e) => setRegisterForm((prev) => ({ ...prev, inviteCode: e.target.value }))}
             />
           </label>
 
@@ -280,24 +188,8 @@ export function RegisterPage() {
           </button>
         </form>
 
-        {registerSecret ? (
-          <>
-            <p className={styles.secret}>
-              One-time secret: <code>{registerSecret}</code>
-            </p>
-            <button
-              type="button"
-              className={styles.continueButton}
-              onClick={handleContinueAfterSecret}
-              disabled={!postRegisterRedirectTo}
-            >
-              I have saved my secret
-            </button>
-          </>
-        ) : null}
-
         <p className={styles.switch}>
-          Already have an account? <Link href="/login">Go to login</Link>
+          Already have an account? <Link href="/login">Sign in</Link>
         </p>
       </section>
     </main>
