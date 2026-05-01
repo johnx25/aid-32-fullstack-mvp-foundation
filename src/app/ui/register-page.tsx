@@ -43,6 +43,8 @@ export function RegisterPage() {
     city: "",
     interests: "",
     inviteCode: "",
+    birthDate: "",
+    gender: "",
   });
 
   useEffect(() => {
@@ -100,6 +102,9 @@ export function RegisterPage() {
           city: nextRegisterForm.city,
           interests: nextRegisterForm.interests,
           inviteCode: nextRegisterForm.inviteCode,
+          birthDate: registerForm.birthDate,
+          gender: registerForm.gender,
+          community: "tamil",
         }),
       });
 
@@ -185,6 +190,36 @@ export function RegisterPage() {
               onChange={(e) => setRegisterForm((prev) => ({ ...prev, email: e.target.value }))}
               required
             />
+          </label>
+
+          <label htmlFor="register-birthdate">
+            Date of Birth
+            <input
+              id="register-birthdate"
+              name="birthDate"
+              type="date"
+              autoComplete="bday"
+              max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split("T")[0]}
+              value={registerForm.birthDate}
+              onChange={(e) => setRegisterForm((prev) => ({ ...prev, birthDate: e.target.value }))}
+              required
+            />
+          </label>
+
+          <label htmlFor="register-gender">
+            Gender
+            <select
+              id="register-gender"
+              name="gender"
+              value={registerForm.gender}
+              onChange={(e) => setRegisterForm((prev) => ({ ...prev, gender: e.target.value }))}
+            >
+              <option value="">Prefer not to say</option>
+              <option value="man">Man</option>
+              <option value="woman">Woman</option>
+              <option value="non-binary">Non-binary</option>
+              <option value="other">Other</option>
+            </select>
           </label>
 
           <label htmlFor="register-city">
