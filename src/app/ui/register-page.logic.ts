@@ -55,7 +55,7 @@ export function isValidRegisterResponseData(data: unknown): data is RegisterResp
 export function mapErrorMessage(error: ApiResult<unknown>["error"], fallback: string) {
   if (!error) return fallback;
   if (error.code === "CONFLICT") return "That email is already registered.";
-  if (error.code === "FORBIDDEN") return "A valid invite code is required right now.";
+  if (error.code === "FORBIDDEN") return error.message || "Access denied.";
   if (error.code === "TOO_MANY_REQUESTS") return "Too many attempts. Please wait and try again.";
   return error.message || fallback;
 }

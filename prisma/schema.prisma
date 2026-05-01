@@ -31,6 +31,9 @@ model Profile {
   bio        String
   city       String
   interests  String
+  birthDate  DateTime?
+  gender     String?
+  community  String   @default("tamil")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)

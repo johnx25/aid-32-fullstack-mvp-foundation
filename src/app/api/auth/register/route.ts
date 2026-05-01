@@ -32,6 +32,16 @@ function isBetaInviteAccepted(inviteCode: string | undefined) {
   return inviteCode ? allowList.includes(inviteCode.trim()) : false;
 }
 
+function calculateAge(birthDate: Date): number {
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 export async function POST(request: Request) {
   let body: {
     email?: unknown;
@@ -41,6 +51,9 @@ export async function POST(request: Request) {
     interests?: unknown;
     inviteCode?: unknown;
     secret?: unknown;
+    birthDate?: unknown;
+    gender?: unknown;
+    community?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -55,6 +68,9 @@ export async function POST(request: Request) {
   const rawInterests = asOptionalString(body.interests);
   const rawInviteCode = asOptionalString(body.inviteCode);
   const rawSecret = asOptionalString(body.secret);
+  const rawBirthDate = asOptionalString(body.birthDate);
+  const rawGender = asOptionalString(body.gender);
+  const rawCommunity = asOptionalString(body.community);
   const customSecret = rawSecret?.trim();
 
   const email = rawEmail ? normalizeEmail(rawEmail) : "";
@@ -62,6 +78,8 @@ export async function POST(request: Request) {
   const bio = rawBio ? sanitizeUserText(rawBio, 500) : "";
   const city = rawCity ? sanitizeUserText(rawCity, 120) : "";
   const interests = rawInterests ? sanitizeUserText(rawInterests, 500) : "";
+  const gender = rawGender ? sanitizeUserText(rawGender, 30) : undefined;
+  const community = rawCommunity ? sanitizeUserText(rawCommunity, 50).toLowerCase() : "tamil";
 
   if (!isBetaInviteAccepted(rawInviteCode)) {
     return fail(403, "FORBIDDEN", "Beta mode is enabled. A valid invite code is required.");
@@ -69,6 +87,23 @@ export async function POST(request: Request) {
 
   if (!email || !displayName || !isValidEmail(email) || displayName.length < 2) {
     return fail(400, "BAD_REQUEST", "email and displayName are required");
+  }
+
+  // Tamil community check
+  if (community !== "tamil") {
+    return fail(403, "FORBIDDEN", "This platform is exclusively for the Tamil community.");
+  }
+
+  // Age verification: birthDate required, must be 18+
+  if (!rawBirthDate) {
+    return fail(400, "BAD_REQUEST", "birthDate is required");
+  }
+  const birthDateObj = new Date(rawBirthDate);
+  if (isNaN(birthDateObj.getTime())) {
+    return fail(400, "BAD_REQUEST", "birthDate must be a valid date (YYYY-MM-DD)");
+  }
+  if (calculateAge(birthDateObj) < 18) {
+    return fail(403, "FORBIDDEN", "You must be at least 18 years old to register.");
   }
   if (customSecret && (customSecret.length < 8 || customSecret.length > 128)) {
     return fail(400, "BAD_REQUEST", "secret must be 8-128 characters");
@@ -93,7 +128,14 @@ export async function POST(request: Request) {
         displayName,
         secretHash: hashSecret(secret),
         profile: {
-          create: { bio, city, interests },
+          create: {
+            bio,
+            city,
+            interests,
+            birthDate: birthDateObj,
+            gender,
+            community,
+          },
         },
       },
       include: { profile: true },
