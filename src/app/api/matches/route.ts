@@ -18,8 +18,9 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
+    type MatchWithUsers = (typeof matches)[number];
     return ok(
-      matches.map((m) => {
+      matches.map((m: MatchWithUsers) => {
         const other = m.userAId === currentUserId ? m.userB : m.userA;
         return {
           matchId: m.id,

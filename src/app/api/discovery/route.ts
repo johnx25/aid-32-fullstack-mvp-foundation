@@ -19,11 +19,12 @@ export async function GET() {
       where: { fromUserId: currentUserId },
       select: { toUserId: true },
     });
-    const likedUserIds = new Set(sentLikes.map((l) => l.toUserId));
+    const likedUserIds = new Set(sentLikes.map((l: { toUserId: number }) => l.toUserId));
     log("info", "discovery.viewed", { currentUserId, resultCount: profiles.length });
 
+    type ProfileWithUser = (typeof profiles)[number];
     return ok(
-      profiles.map((p) => ({
+      profiles.map((p: ProfileWithUser) => ({
         profileId: p.id,
         userId: p.userId,
         displayName: p.user.displayName,

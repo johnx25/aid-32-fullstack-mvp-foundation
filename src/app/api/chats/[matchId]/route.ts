@@ -46,8 +46,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mat
       take: 200,
     });
 
+    type MessageWithSender = (typeof messages)[number];
     return ok(
-      messages.map((m) => ({
+      messages.map((m: MessageWithSender) => ({
         messageId: m.id,
         matchId: m.matchId,
         senderId: m.senderId,
@@ -91,23 +92,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
       return fail(429, "TOO_MANY_REQUESTS", "Message cooldown active. Please wait a moment.");
     }
 
-    const message = await prisma.$transaction(async (tx) => {
-      const match = await tx.match.findUnique({ where: { id: matchId } });
-      if (!match) {
-        throw new Error("MATCH_NOT_FOUND");
-      }
-      if (match.userAId !== currentUserId && match.userBId !== currentUserId) {
-        throw new Error("FORBIDDEN_MATCH");
-      }
-
-      return tx.message.create({
-        data: {
-          matchId,
-          senderId: currentUserId,
-          content,
-        },
-        include: { sender: { select: { displayName: true } } },
-      });
+    // Membership already verified above via verifyMembership()
+    const message = await prisma.message.create({
+      data: {
+        matchId,
+        senderId: currentUserId,
+        content,
+      },
+      include: { sender: { select: { displayName: true } } },
     });
 
     log("info", "chat.message.created", { matchId, currentUserId, messageId: message.id });
@@ -123,17 +115,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
       },
       201,
     );
-  } catch (error) {
-    if (error instanceof Error && error.message === "MATCH_NOT_FOUND") {
-      return fail(404, "NOT_FOUND", "Match not found");
-    }
-    if (error instanceof Error && error.message === "FORBIDDEN_MATCH") {
-      return fail(403, "FORBIDDEN", "Forbidden");
-    }
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : null;
+    if (error?.message === "UNAUTHORIZED") {
       return fail(401, "UNAUTHORIZED", "Unauthorized");
     }
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && (err as Prisma.PrismaClientKnownRequestError).code === "P2003") {
       return fail(404, "NOT_FOUND", "Match not found");
     }
 
