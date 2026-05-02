@@ -12,16 +12,17 @@ type LoginResponseData = {
   email: string;
   displayName: string;
   authTokenExpiresAt: string;
+  redirectTo: string;
 };
 
 function normalizeEmailInput(email: string) {
   return email.trim().toLowerCase();
 }
 
-function normalizeLoginInput(input: { email: string; secret: string }) {
+function normalizeLoginInput(input: { email: string; password: string }) {
   return {
     email: normalizeEmailInput(input.email),
-    secret: input.secret.trim(),
+    password: input.password.trim(),
   };
 }
 
@@ -43,21 +44,19 @@ function isValidLoginResponseData(data: unknown): data is LoginResponseData {
 
 function mapErrorMessage(error: ApiResult<unknown>["error"], fallback: string) {
   if (!error) return fallback;
-  if (error.code === "UNAUTHORIZED") return "Login failed. Please check your secret.";
-  if (error.code === "TOO_MANY_REQUESTS") return "Too many attempts. Please wait and try again.";
+  if (error.code === "UNAUTHORIZED") return "Login fehlgeschlagen. Bitte E-Mail und Passwort prüfen.";
+  if (error.code === "TOO_MANY_REQUESTS") return "Zu viele Versuche. Bitte kurz warten.";
   return error.message || fallback;
 }
 
 async function apiRequest<T>(path: string, options?: RequestInit): Promise<ApiResult<T>> {
   const headers = new Headers(options?.headers || {});
   headers.set("Content-Type", "application/json");
-
   const response = await fetch(path, { ...options, headers });
   const body = (await response.json().catch(() => null)) as ApiResult<T> | null;
   if (!body) {
     return { success: false, error: { code: "BAD_RESPONSE", message: "Server response could not be read." } };
   }
-
   return body;
 }
 
@@ -66,30 +65,24 @@ export function LoginPage() {
 
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-
   const [globalError, setGlobalError] = useState("");
-  const [loginForm, setLoginForm] = useState({ email: "", secret: "" });
+  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
 
   useEffect(() => {
     let mounted = true;
-
     async function checkSession() {
       try {
-        const sessionRes = await apiRequest<{ userId: number }>("/api/auth/session", { method: "GET" });
+        const res = await apiRequest<{ userId: number }>("/api/auth/session", { method: "GET" });
         if (!mounted) return;
-        if (sessionRes.success) {
-          router.replace("/");
+        if (res.success) {
+          router.replace("/matches");
           return;
         }
       } finally {
-        if (mounted) {
-          setIsCheckingSession(false);
-        }
+        if (mounted) setIsCheckingSession(false);
       }
     }
-
     void checkSession();
-
     return () => {
       mounted = false;
     };
@@ -103,24 +96,23 @@ export function LoginPage() {
     setIsLoggingIn(true);
 
     try {
-      const nextLoginForm = normalizeLoginInput(loginForm);
+      const normalized = normalizeLoginInput(loginForm);
       const res = await apiRequest<LoginResponseData>("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify(nextLoginForm),
+        body: JSON.stringify({ email: normalized.email, secret: normalized.password }),
       });
 
       if (!res.success) {
-        setGlobalError(mapErrorMessage(res.error, "Login failed."));
+        setGlobalError(mapErrorMessage(res.error, "Login fehlgeschlagen."));
         return;
       }
 
       if (!isValidLoginResponseData(res.data)) {
-        setGlobalError("Login failed due to an invalid server response.");
+        setGlobalError("Login fehlgeschlagen. Ungültige Server-Antwort.");
         return;
       }
 
-      setLoginForm(nextLoginForm);
-      router.replace("/");
+      router.replace(res.data.redirectTo ?? "/matches");
       router.refresh();
     } finally {
       setIsLoggingIn(false);
@@ -130,69 +122,71 @@ export function LoginPage() {
   return (
     <main className={styles.page}>
       <section className={styles.hero}>
-        <p className={styles.kicker}>AID-67</p>
-        <h1>Welcome back</h1>
-        <p className={styles.subtitle}>Sign in with your email and one-time secret to continue to your matches.</p>
+        <p className={styles.kicker}>Tamil Dating</p>
+        <h1>Willkommen zurück</h1>
+        <p className={styles.subtitle}>
+          Melde dich an und entdecke deine Matches.
+        </p>
       </section>
 
       <section className={styles.panel}>
         <header className={styles.panelHeader}>
-          <h2>Sign in to AID-32</h2>
-          <p className={styles.help}>Secure access with your registration secret.</p>
+          <h2>Anmelden</h2>
+          <p className={styles.help}>
+            {isCheckingSession ? "Session wird geprüft…" : "Gib deine E-Mail und dein Passwort ein."}
+          </p>
         </header>
 
         {globalError ? <p className={styles.error}>{globalError}</p> : null}
 
-        {isCheckingSession ? (
-          <p className={styles.help}>Checking session...</p>
-        ) : (
-          <div className={styles.grid}>
-            <form onSubmit={handleLogin} className={styles.card}>
-              <label htmlFor="login-email">
-                Email
-                <input
-                  id="login-email"
-                  name="email"
-                  placeholder="you@example.com"
-                  type="email"
-                  autoComplete="email"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  value={loginForm.email}
-                  onChange={(e) => setLoginForm((prev) => ({ ...prev, email: e.target.value }))}
-                  required
-                />
-              </label>
-              <label htmlFor="login-secret">
-                Secret
-                <input
-                  id="login-secret"
-                  name="secret"
-                  placeholder="Paste your secret"
-                  type="password"
-                  autoComplete="current-password"
-                  minLength={8}
-                  maxLength={128}
-                  value={loginForm.secret}
-                  onChange={(e) => setLoginForm((prev) => ({ ...prev, secret: e.target.value }))}
-                  required
-                />
-              </label>
-              <button type="submit" disabled={isLoggingIn}>
-                {isLoggingIn ? "Signing in..." : "Sign in"}
-              </button>
-            </form>
+        <div className={styles.grid}>
+          <form onSubmit={handleLogin} method="post" action="#" className={styles.card}>
+            <label htmlFor="login-email">
+              E-Mail
+              <input
+                id="login-email"
+                name="email"
+                type="email"
+                placeholder="du@beispiel.de"
+                autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                value={loginForm.email}
+                onChange={(e) => setLoginForm((prev) => ({ ...prev, email: e.target.value }))}
+                required
+              />
+            </label>
 
-            <aside className={styles.card}>
-              <h3>Need an account?</h3>
-              <p className={styles.help}>Register first and keep your generated secret safe.</p>
-              <Link href="/register" className={styles.linkButton}>
-                Create account
-              </Link>
-            </aside>
-          </div>
-        )}
+            <label htmlFor="login-password">
+              Passwort
+              <input
+                id="login-password"
+                name="password"
+                type="password"
+                placeholder="Mindestens 8 Zeichen"
+                autoComplete="current-password"
+                minLength={8}
+                maxLength={128}
+                value={loginForm.password}
+                onChange={(e) => setLoginForm((prev) => ({ ...prev, password: e.target.value }))}
+                required
+              />
+            </label>
+
+            <button type="submit" disabled={isLoggingIn}>
+              {isLoggingIn ? "Anmelden…" : "Anmelden"}
+            </button>
+          </form>
+
+          <aside className={styles.card}>
+            <h3>Noch kein Account?</h3>
+            <p className={styles.help}>Registriere dich und finde dein Match.</p>
+            <Link href="/register" className={styles.linkButton}>
+              Account erstellen
+            </Link>
+          </aside>
+        </div>
       </section>
     </main>
   );

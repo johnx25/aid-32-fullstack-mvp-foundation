@@ -12,15 +12,16 @@ function asOptionalString(value: unknown) {
 
 export async function POST(request: Request) {
   try {
-    let body: { email?: unknown; secret?: unknown };
+    let body: { email?: unknown; secret?: unknown; password?: unknown };
     try {
-      body = (await request.json()) as { email?: unknown; secret?: unknown };
+      body = (await request.json()) as { email?: unknown; secret?: unknown; password?: unknown };
     } catch {
       return fail(400, "BAD_REQUEST", "Invalid JSON body");
     }
 
     const rawEmail = asOptionalString(body.email);
-    const rawSecret = asOptionalString(body.secret);
+    // accept both 'secret' and 'password' field names
+    const rawSecret = asOptionalString(body.secret) ?? asOptionalString(body.password);
 
     const email = rawEmail ? normalizeEmail(rawEmail) : "";
     const secret = rawSecret?.trim();
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
       displayName: user.displayName,
       profile: user.profile,
       authTokenExpiresAt: new Date(auth.expiresAt * 1000).toISOString(),
-      redirectTo: "/",
+      redirectTo: "/matches",
     });
     response.cookies.set(AUTH_TOKEN_COOKIE_NAME, auth.token, getAuthCookieOptions());
     return response;
