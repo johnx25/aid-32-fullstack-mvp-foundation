@@ -9,7 +9,10 @@ export type ApiErrorCode =
   | "CONFLICT"
   | "TOO_MANY_REQUESTS"
   | "DATABASE_CONFIG_ERROR"
-  | "INTERNAL_ERROR";
+  | "INTERNAL_ERROR"
+  | "GEOCODE_ERROR"
+  | "GEOCODE_NO_CITY"
+  | "GEOCODE_TIMEOUT";
 
 export function ok<T>(data: T, status = 200) {
   return NextResponse.json({ success: true, data, error: null }, { status });
