@@ -58,7 +58,8 @@
 }
 
 .form input,
-.form textarea {
+.form textarea,
+.form select {
   font: inherit;
   border: 1px solid #cdd9eb;
   border-radius: 12px;
@@ -68,8 +69,18 @@
   transition: outline 120ms ease;
 }
 
+.form select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2341526d' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  padding-right: 2.2rem;
+  cursor: pointer;
+}
+
 .form input:focus,
-.form textarea:focus {
+.form textarea:focus,
+.form select:focus {
   outline: 2px solid var(--primary-color, #e87722);
   outline-offset: 1px;
 }

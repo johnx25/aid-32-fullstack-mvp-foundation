@@ -14,6 +14,12 @@ type ProfileData = {
   city: string | null;
   interests: string | null;
   avatarUrl: string;
+  gender: string | null;
+  interestedIn: string | null;
+  height: number | null;
+  education: string | null;
+  job: string | null;
+  religion: string | null;
 };
 
 type GeocodeResult = {
@@ -52,6 +58,12 @@ export function ProfileEditPage() {
     bio: "",
     city: "",
     interests: "",
+    gender: "",
+    interestedIn: "",
+    height: "",
+    education: "",
+    job: "",
+    religion: "",
   });
 
   const [locationState, setLocationState] = useState<LocationState>({ status: "idle" });
@@ -84,6 +96,12 @@ export function ProfileEditPage() {
             bio: res.data.bio ?? "",
             city: res.data.city ?? "",
             interests: res.data.interests ?? "",
+            gender: res.data.gender ?? "",
+            interestedIn: res.data.interestedIn ?? "",
+            height: res.data.height != null ? String(res.data.height) : "",
+            education: res.data.education ?? "",
+            job: res.data.job ?? "",
+            religion: res.data.religion ?? "",
           });
         }
       } finally {
@@ -153,6 +171,7 @@ export function ProfileEditPage() {
     setIsSaving(true);
 
     try {
+      const heightNum = form.height.trim() ? parseInt(form.height.trim(), 10) : null;
       const res = await apiRequest<ProfileData>("/api/profile", {
         method: "PATCH",
         body: JSON.stringify({
@@ -160,6 +179,12 @@ export function ProfileEditPage() {
           bio: form.bio.trim(),
           city: form.city.trim(),
           interests: form.interests.trim(),
+          gender: form.gender || null,
+          interestedIn: form.interestedIn || null,
+          height: heightNum,
+          education: form.education || null,
+          job: form.job.trim() || null,
+          religion: form.religion || null,
         }),
       });
 
@@ -264,6 +289,107 @@ export function ProfileEditPage() {
             <span className={styles.privacyNote}>
               🔒 Nur die Stadt wird gespeichert — keine genaue Adresse.
             </span>
+          </label>
+
+          {/* Gender */}
+          <label htmlFor="profile-gender">
+            Geschlecht
+            <select
+              id="profile-gender"
+              name="gender"
+              value={form.gender}
+              onChange={(e) => setForm((prev) => ({ ...prev, gender: e.target.value }))}
+            >
+              <option value="">Bitte wählen</option>
+              <option value="mann">Mann</option>
+              <option value="frau">Frau</option>
+              <option value="divers">Divers</option>
+              <option value="keine_angabe">Keine Angabe</option>
+            </select>
+          </label>
+
+          {/* Interested in */}
+          <label htmlFor="profile-interestedIn">
+            Interessiert an
+            <select
+              id="profile-interestedIn"
+              name="interestedIn"
+              value={form.interestedIn}
+              onChange={(e) => setForm((prev) => ({ ...prev, interestedIn: e.target.value }))}
+            >
+              <option value="">Bitte wählen</option>
+              <option value="mann">Männern</option>
+              <option value="frau">Frauen</option>
+              <option value="beide">Beiden</option>
+              <option value="keine_angabe">Keine Angabe</option>
+            </select>
+          </label>
+
+          {/* Height */}
+          <label htmlFor="profile-height">
+            Größe (cm)
+            <input
+              id="profile-height"
+              name="height"
+              type="number"
+              placeholder="z.B. 175"
+              min={100}
+              max={250}
+              value={form.height}
+              onChange={(e) => setForm((prev) => ({ ...prev, height: e.target.value }))}
+            />
+          </label>
+
+          {/* Education */}
+          <label htmlFor="profile-education">
+            Ausbildung
+            <select
+              id="profile-education"
+              name="education"
+              value={form.education}
+              onChange={(e) => setForm((prev) => ({ ...prev, education: e.target.value }))}
+            >
+              <option value="">Bitte wählen</option>
+              <option value="ausbildung">Ausbildung</option>
+              <option value="abitur">Abitur</option>
+              <option value="bachelor">Bachelor</option>
+              <option value="master">Master</option>
+              <option value="promotion">Promotion</option>
+              <option value="sonstiges">Sonstiges</option>
+            </select>
+          </label>
+
+          {/* Job */}
+          <label htmlFor="profile-job">
+            Beruf
+            <input
+              id="profile-job"
+              name="job"
+              type="text"
+              placeholder="z.B. Softwareentwickler"
+              maxLength={120}
+              value={form.job}
+              onChange={(e) => setForm((prev) => ({ ...prev, job: e.target.value }))}
+            />
+          </label>
+
+          {/* Religion */}
+          <label htmlFor="profile-religion">
+            Religion
+            <select
+              id="profile-religion"
+              name="religion"
+              value={form.religion}
+              onChange={(e) => setForm((prev) => ({ ...prev, religion: e.target.value }))}
+            >
+              <option value="">Bitte wählen</option>
+              <option value="hinduismus">Hinduismus</option>
+              <option value="islam">Islam</option>
+              <option value="christentum">Christentum</option>
+              <option value="sikhismus">Sikhismus</option>
+              <option value="kein">Keine Religion</option>
+              <option value="sonstiges">Sonstiges</option>
+            </select>
           </label>
 
           {/* Interests */}

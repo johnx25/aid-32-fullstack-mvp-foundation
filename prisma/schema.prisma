@@ -31,9 +31,14 @@ model Profile {
   bio        String
   city       String
   interests  String
-  birthDate  DateTime?
-  gender     String?
-  community  String   @default("tamil")
+  birthDate    DateTime?
+  gender       String?   // mann | frau | divers | keine_angabe
+  interestedIn String?   // mann | frau | beide | keine_angabe
+  height       Int?      // in cm
+  education    String?   // z.B. abitur | bachelor | master | promotion | ausbildung | sonstiges
+  job          String?   // Freitext
+  religion     String?   // hinduismus | islam | christentum | sikhismus | kein | sonstiges
+  community    String    @default("tamil")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
