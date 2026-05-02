@@ -183,7 +183,7 @@ export function RegisterPage() {
             />
           </label>
 
-          <button type="submit" disabled={isRegistering}>
+          <button type="submit" disabled={isRegistering || isCheckingSession}>
             {isRegistering ? "Creating account…" : "Create account"}
           </button>
         </form>
