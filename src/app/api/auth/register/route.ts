@@ -5,6 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { log } from "@/lib/logger";
 import { isValidEmail, normalizeEmail, sanitizeUserText } from "@/lib/validation";
 import { hashSecret } from "@/lib/secret-hash";
+import { registerUser } from "@/lib/register-user";
 import { assertAuthConfig, AUTH_TOKEN_COOKIE_NAME, createUserAuthToken, getAuthCookieOptions } from "@/lib/auth";
 
 function asOptionalString(value: unknown) {
@@ -34,12 +35,6 @@ function calculateAge(birthDate: Date): number {
   return age;
 }
 
-/** Derive a display name from an email address (part before @). */
-function displayNameFromEmail(email: string): string {
-  const local = email.split("@")[0] ?? email;
-  return local.replace(/[._\-+]/g, " ").trim().slice(0, 80) || "User";
-}
-
 export async function POST(request: Request) {
   let body: {
     email?: unknown;
@@ -64,12 +59,7 @@ export async function POST(request: Request) {
   const email = rawEmail ? normalizeEmail(rawEmail) : "";
   const password = rawPassword?.trim();
 
-  // displayName: use provided value or derive from email
-  const displayName = rawDisplayName
-    ? sanitizeUserText(rawDisplayName, 80)
-    : email
-    ? displayNameFromEmail(email)
-    : "";
+  const displayName = rawDisplayName ? sanitizeUserText(rawDisplayName, 80) : undefined;
 
   if (!isBetaInviteAccepted(rawInviteCode)) {
     return fail(403, "FORBIDDEN", "Beta mode is enabled. A valid invite code is required.");
@@ -102,39 +92,46 @@ export async function POST(request: Request) {
   try {
     assertAuthConfig();
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return fail(409, "CONFLICT", "An account with this email already exists.");
-    }
-
-    const user = await prisma.user.create({
-      data: {
-        email,
-        displayName,
-        secretHash: hashSecret(password),
-        profile: {
-          create: {
-            bio: "",
-            city: "",
-            interests: "",
-            birthDate: birthDateObj,
-            community: "tamil",
-          },
-        },
+    const result = await registerUser(
+      {
+        findUserByEmail: (candidateEmail) => prisma.user.findUnique({ where: { email: candidateEmail } }),
+        createUser: (data) =>
+          prisma.user.create({
+            data: {
+              email: data.email,
+              displayName: data.displayName,
+              secretHash: data.secretHash,
+              profile: {
+                create: {
+                  bio: "",
+                  city: "",
+                  interests: "",
+                  birthDate: data.birthDate,
+                  community: "tamil",
+                },
+              },
+            },
+          }),
+        hashPassword: hashSecret,
       },
-      include: { profile: true },
-    });
+      {
+        email,
+        password,
+        birthDate: birthDateObj,
+        displayName,
+      },
+    );
 
-    const auth = createUserAuthToken(user.id);
-    log("info", "auth.register.success", { userId: user.id, email: user.email });
+    const auth = createUserAuthToken(result.userId);
+    log("info", "auth.register.success", { userId: result.userId, email: result.email });
 
     const response = ok(
       {
-        userId: user.id,
-        email: user.email,
-        displayName: user.displayName,
+        userId: result.userId,
+        email: result.email,
+        displayName: result.displayName,
         authTokenExpiresAt: new Date(auth.expiresAt * 1000).toISOString(),
-        redirectTo: "/profile/setup",
+        redirectTo: result.redirectTo,
       },
       201,
     );
@@ -147,6 +144,9 @@ export async function POST(request: Request) {
       return fail(500, "INTERNAL_ERROR", "Auth configuration is missing");
     }
     log("error", "auth.register.error", { reason: knownErr?.message ?? "unknown" });
+    if (knownErr?.message === "EMAIL_ALREADY_EXISTS") {
+      return fail(409, "CONFLICT", "An account with this email already exists.");
+    }
     if (err instanceof Prisma.PrismaClientKnownRequestError && (err as Prisma.PrismaClientKnownRequestError).code === "P2002") {
       return fail(409, "CONFLICT", "An account with this email already exists.");
     }
