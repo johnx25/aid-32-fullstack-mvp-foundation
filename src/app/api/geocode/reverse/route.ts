@@ -1,5 +1,6 @@
 import { fail, ok } from "@/lib/api-response";
 import { requireCurrentUserId } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // Privacy-safe reverse geocoding:
 // We only return city + country, never street/house number or precise coordinates.
@@ -7,7 +8,8 @@ import { requireCurrentUserId } from "@/lib/auth";
 // Coordinates are rounded to 2 decimal places (~1km accuracy) before forwarding.
 
 const NOMINATIM_BASE = "https://nominatim.openstreetmap.org";
-const USER_AGENT = "AID-32 Tamil Dating MVP (contact: admin@example.com)";
+// Update USER_AGENT with real contact info before production — Nominatim ToS requires it
+const USER_AGENT = process.env.GEOCODE_USER_AGENT ?? "AID-32 Tamil Dating MVP (contact: ops@aid32.example.com)";
 
 function roundCoord(value: number, decimals = 2): number {
   const factor = Math.pow(10, decimals);
@@ -26,11 +28,18 @@ function extractCity(address: Record<string, string>): string | null {
 }
 
 export async function GET(request: Request) {
+  let userId: number;
   try {
     // Require authentication — GPS data is personal
-    await requireCurrentUserId();
+    userId = await requireCurrentUserId();
   } catch {
     return fail(401, "UNAUTHORIZED", "Unauthorized");
+  }
+
+  // Rate limit: max 10 geocode requests per user per minute
+  const limit = checkRateLimit(`geocode:${userId}`, 10, 60 * 1000);
+  if (!limit.allowed) {
+    return fail(429, "TOO_MANY_REQUESTS", "Too many location requests. Please wait a moment.");
   }
 
   const { searchParams } = new URL(request.url);

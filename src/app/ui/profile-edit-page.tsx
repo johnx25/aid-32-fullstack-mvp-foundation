@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./profile-edit-page.module.css";
 
@@ -55,6 +55,13 @@ export function ProfileEditPage() {
   });
 
   const [locationState, setLocationState] = useState<LocationState>({ status: "idle" });
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // Cleanup all pending timers on unmount
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => { timers.forEach(clearTimeout); };
+  }, []);
 
   // Load current profile on mount
   useEffect(() => {
@@ -117,7 +124,7 @@ export function ProfileEditPage() {
           const { city, country } = res.data;
           setLocationState({ status: "success", city, country: country ?? null });
           setForm((prev) => ({ ...prev, city }));
-          setTimeout(() => setLocationState({ status: "idle" }), 4000);
+          timersRef.current.push(setTimeout(() => setLocationState({ status: "idle" }), 4000));
         } catch {
           setLocationState({ status: "error", message: "Geocoding fehlgeschlagen. Bitte manuell eingeben." });
         }
@@ -162,7 +169,7 @@ export function ProfileEditPage() {
       }
 
       setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      timersRef.current.push(setTimeout(() => setSaveSuccess(false), 3000));
     } finally {
       setIsSaving(false);
     }
@@ -274,7 +281,7 @@ export function ProfileEditPage() {
           </label>
 
           <div className={styles.actions}>
-            <button type="button" className={styles.cancelButton} onClick={() => router.back()}>
+            <button type="button" className={styles.cancelButton} onClick={() => { if (window.history.length > 1) { router.back(); } else { router.replace("/matches"); } }}>
               Abbrechen
             </button>
             <button type="submit" className={styles.saveButton} disabled={isSaving}>
