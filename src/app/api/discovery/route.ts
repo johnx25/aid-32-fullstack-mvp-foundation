@@ -83,8 +83,16 @@ export async function GET(request: Request) {
     if (filterInterests) {
       where.interests = { contains: filterInterests, mode: "insensitive" };
     }
-    if (filterJob) {
+    // hasJob and filterJob: merge into a single AND condition to avoid overwrite
+    if (hasJob && filterJob) {
+      where.AND = [
+        { job: { not: null } },
+        { job: { contains: filterJob, mode: "insensitive" } },
+      ];
+    } else if (filterJob) {
       where.job = { contains: filterJob, mode: "insensitive" };
+    } else if (hasJob) {
+      where.job = { not: null };
     }
 
     if (hasPhoto) {
@@ -92,9 +100,6 @@ export async function GET(request: Request) {
     }
     if (hasBio) {
       where.bio = { not: "" };
-    }
-    if (hasJob) {
-      where.job = { not: null };
     }
 
     if (minAge > 0 || maxAge < 120) {
@@ -111,16 +116,17 @@ export async function GET(request: Request) {
       };
     }
 
+    // ── Fetch liked user IDs once (used for exclude filter + flag) ──────────
+    const sentLikesAll = await prisma.like.findMany({
+      where: { fromUserId: currentUserId },
+      select: { toUserId: true },
+    });
+    const likedUserIds = sentLikesAll.map((l) => l.toUserId);
+    const likedSet = new Set(likedUserIds);
+
     // ── Exclude already-liked profiles ──────────────────────────────────────
-    if (excludeLiked) {
-      const sentLikes = await prisma.like.findMany({
-        where: { fromUserId: currentUserId },
-        select: { toUserId: true },
-      });
-      const likedUserIds = sentLikes.map((l) => l.toUserId);
-      if (likedUserIds.length > 0) {
-        where.userId = { notIn: likedUserIds, not: currentUserId };
-      }
+    if (excludeLiked && likedUserIds.length > 0) {
+      where.userId = { notIn: likedUserIds, not: currentUserId };
     }
 
     // ── Sorting ─────────────────────────────────────────────────────────────
@@ -141,18 +147,10 @@ export async function GET(request: Request) {
       prisma.profile.count({ where }),
     ]);
 
-    // ── Liked set (for flag on each result) ─────────────────────────────────
-    const sentLikesAll = await prisma.like.findMany({
-      where: { fromUserId: currentUserId },
-      select: { toUserId: true },
-    });
-    const likedSet = new Set(sentLikesAll.map((l) => l.toUserId));
-
     log("info", "discovery.viewed", { currentUserId, resultCount: profiles.length, total });
 
     type ProfileRow = (typeof profiles)[number];
-    return ok({
-      profiles: profiles.map((p: ProfileRow) => ({
+    const profileList = profiles.map((p: ProfileRow) => ({
         profileId: p.id,
         userId: p.userId,
         displayName: p.user.displayName,
@@ -167,9 +165,16 @@ export async function GET(request: Request) {
         job: p.job,
         religion: p.religion,
         likedByCurrentUser: likedSet.has(p.userId),
-      })),
-      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    });
+      }));
+
+    // Return array directly for backward compatibility + pagination meta in header
+    // New consumers can read X-Total-Count and X-Total-Pages headers
+    const response = ok(profileList);
+    response.headers.set("X-Total-Count", String(total));
+    response.headers.set("X-Total-Pages", String(Math.ceil(total / limit)));
+    response.headers.set("X-Page", String(page));
+    response.headers.set("X-Limit", String(limit));
+    return response;
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
       return fail(401, "UNAUTHORIZED", "Unauthorized");

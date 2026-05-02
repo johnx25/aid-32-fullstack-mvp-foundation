@@ -58,9 +58,10 @@ export async function PATCH(request: Request) {
       return fail(404, "NOT_FOUND", "Profile not found");
     }
 
-    const VALID_GENDER = ["mann", "frau", "divers", "keine_angabe"];
-    const VALID_EDUCATION = ["abitur", "bachelor", "master", "promotion", "ausbildung", "sonstiges"];
-    const VALID_RELIGION = ["hinduismus", "islam", "christentum", "sikhismus", "kein", "sonstiges"];
+    const VALID_GENDER       = ["mann", "frau", "divers", "keine_angabe"];
+    const VALID_INTERESTED_IN = ["mann", "frau", "beide", "keine_angabe"];
+    const VALID_EDUCATION     = ["abitur", "bachelor", "master", "promotion", "ausbildung", "sonstiges"];
+    const VALID_RELIGION      = ["hinduismus", "islam", "christentum", "sikhismus", "kein", "sonstiges"];
 
     const hasDisplayName = "displayName" in body;
     const hasBio = "bio" in body;
@@ -80,7 +81,7 @@ export async function PATCH(request: Request) {
     const interests = hasInterests ? sanitizeUserText(body.interests ?? "", 500) : undefined;
     const avatarUrl = hasAvatarUrl ? sanitizeUserText(body.avatarUrl ?? "", 300) : undefined;
     const gender = hasGender ? (VALID_GENDER.includes(body.gender ?? "") ? body.gender : null) : undefined;
-    const interestedIn = hasInterestedIn ? (VALID_GENDER.includes(body.interestedIn ?? "") ? body.interestedIn : null) : undefined;
+    const interestedIn = hasInterestedIn ? (VALID_INTERESTED_IN.includes(body.interestedIn ?? "") ? body.interestedIn : null) : undefined;
     const height = hasHeight ? (typeof body.height === "number" && body.height >= 100 && body.height <= 250 ? body.height : null) : undefined;
     const education = hasEducation ? (VALID_EDUCATION.includes(body.education ?? "") ? body.education : null) : undefined;
     const job = hasJob ? sanitizeUserText(body.job ?? "", 120) : undefined;
