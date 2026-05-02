@@ -30,6 +30,23 @@ export default function ProfileSetupPage() {
           Profil jetzt einrichten →
         </Link>
         <Link
+          href="/profile/photos"
+          style={{
+            display: "inline-block",
+            background: "#f0f4fa",
+            color: "#1d2f4a",
+            fontWeight: 600,
+            padding: "0.6rem 1.2rem",
+            borderRadius: 12,
+            textDecoration: "none",
+            textAlign: "center",
+            fontSize: "0.95rem",
+            border: "1px solid #cdd9eb",
+          }}
+        >
+          Fotos hochladen
+        </Link>
+        <Link
           href="/matches"
           style={{ textAlign: "center", color: "#41526d", fontSize: "0.9rem" }}
         >

@@ -22,6 +22,7 @@ model User {
   matchesB    Match[]   @relation("matchUserB")
   messagesSent Message[] @relation("messageSender")
   tasks        Task[]
+  photos       ProfilePhoto[]
 }
 
 model Profile {
@@ -84,6 +85,20 @@ model Message {
   sender User  @relation("messageSender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([matchId, createdAt])
+}
+
+model ProfilePhoto {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  url       String
+  filename  String
+  mimeType  String
+  sizeBytes Int
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sortOrder])
 }
 
 model Task {
