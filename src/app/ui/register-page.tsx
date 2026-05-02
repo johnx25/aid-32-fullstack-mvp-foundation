@@ -135,7 +135,7 @@ export function RegisterPage() {
 
         {error ? <p className={styles.error}>{error}</p> : null}
 
-        <form onSubmit={handleRegister} className={styles.form}>
+        <form onSubmit={handleRegister} method="post" action="#" className={styles.form}>
           <label htmlFor="register-email">
             Email
             <input
