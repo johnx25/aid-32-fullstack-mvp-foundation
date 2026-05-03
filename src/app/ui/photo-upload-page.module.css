@@ -1,0 +1,272 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: start center;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background:
+    radial-gradient(1200px 640px at -6% -10%, rgba(241, 130, 32, 0.18), transparent 60%),
+    radial-gradient(1100px 640px at 104% 0%, rgba(0, 142, 212, 0.15), transparent 58%),
+    linear-gradient(140deg, #f9f6ef 0%, #f4f8ff 44%, #eff9f6 100%);
+}
+
+.loading {
+  color: #41526d;
+}
+
+.container {
+  width: 100%;
+  max-width: 620px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #ced9ea;
+  border-radius: 24px;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  box-shadow: 0 22px 56px -42px rgba(18, 36, 70, 0.48);
+  backdrop-filter: blur(8px);
+  display: grid;
+  gap: 1.25rem;
+}
+
+/* Header */
+.header {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.header h1 {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  color: #10131f;
+  margin: 0;
+}
+
+.subtitle {
+  color: #41526d;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* Progress bar */
+.progress {
+  height: 6px;
+  background: #e2eaf6;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+
+.progressBar {
+  height: 100%;
+  background: var(--primary-color, #e87722);
+  border-radius: 99px;
+  transition: width 400ms ease;
+}
+
+.progressLabel {
+  font-size: 0.82rem;
+  color: #41526d;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Drop zone */
+.dropZone {
+  border: 2px dashed #cdd9eb;
+  border-radius: 16px;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+  background: #f8fafd;
+  user-select: none;
+}
+
+.dropZone:hover,
+.dropZone:focus-visible {
+  border-color: var(--primary-color, #e87722);
+  background: #fff8f3;
+  outline: none;
+}
+
+.dropZone.dragging {
+  border-color: var(--primary-color, #e87722);
+  background: #fff4ec;
+  box-shadow: 0 0 0 4px rgba(232, 119, 34, 0.12);
+}
+
+.dropZone.uploading {
+  cursor: wait;
+  opacity: 0.8;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.dropContent {
+  display: grid;
+  gap: 0.4rem;
+  color: #41526d;
+}
+
+.dropContent p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.dropIcon {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.dropHint {
+  font-size: 0.8rem;
+  color: #7a90aa;
+}
+
+/* Error */
+.error {
+  color: #8c1c2c;
+  background: #fff2f4;
+  border: 1px solid #f3c1ca;
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Photo grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.photoCard {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  background: #e8eef6;
+  border: 1px solid #ced9ea;
+}
+
+.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mainBadge {
+  position: absolute;
+  bottom: 0.4rem;
+  left: 0.4rem;
+  background: rgba(18, 36, 70, 0.72);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+}
+
+.deleteBtn {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(140, 28, 44, 0.82);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 150ms ease;
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background: rgba(140, 28, 44, 1);
+}
+
+.deleteBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Hint */
+.hint {
+  font-size: 0.8rem;
+  color: #7a90aa;
+  margin: 0;
+  text-align: center;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+.backButton {
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  border: 1px solid #cdd9eb;
+  background: #fff;
+  color: #41526d;
+  padding: 0.65rem 1.2rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.backButton:hover {
+  background: #f0f4fa;
+}
+
+.continueButton {
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  border: none;
+  background: var(--primary-color, #e87722);
+  color: #fff;
+  padding: 0.65rem 1.4rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: filter 150ms ease, transform 150ms ease;
+  flex: 1;
+  text-align: center;
+}
+
+.continueButton:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.continueButton:disabled {
+  background: #c8d4e6;
+  color: #6b82a0;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+@media (max-width: 480px) {
+  .actions {
+    flex-direction: column-reverse;
+  }
+  .backButton,
+  .continueButton {
+    width: 100%;
+    text-align: center;
+  }
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}

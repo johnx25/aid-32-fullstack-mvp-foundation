@@ -24,6 +24,12 @@ export async function GET() {
       bio: profile.bio,
       city: profile.city,
       interests: profile.interests,
+      gender: profile.gender,
+      interestedIn: profile.interestedIn,
+      height: profile.height,
+      education: profile.education,
+      job: profile.job,
+      religion: profile.religion,
     });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
@@ -37,7 +43,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const currentUserId = await requireCurrentUserId();
-    let body: { displayName?: string; bio?: string; city?: string; interests?: string; avatarUrl?: string };
+    let body: { displayName?: string; bio?: string; city?: string; interests?: string; avatarUrl?: string; gender?: string; interestedIn?: string; height?: number; education?: string; job?: string; religion?: string };
     try {
       body = (await request.json()) as typeof body;
     } catch {
@@ -52,17 +58,34 @@ export async function PATCH(request: Request) {
       return fail(404, "NOT_FOUND", "Profile not found");
     }
 
+    const VALID_GENDER       = ["mann", "frau", "divers", "keine_angabe"];
+    const VALID_INTERESTED_IN = ["mann", "frau", "beide", "keine_angabe"];
+    const VALID_EDUCATION     = ["abitur", "bachelor", "master", "promotion", "ausbildung", "sonstiges"];
+    const VALID_RELIGION      = ["hinduismus", "islam", "christentum", "sikhismus", "kein", "sonstiges"];
+
     const hasDisplayName = "displayName" in body;
     const hasBio = "bio" in body;
     const hasCity = "city" in body;
     const hasInterests = "interests" in body;
     const hasAvatarUrl = "avatarUrl" in body;
+    const hasGender = "gender" in body;
+    const hasInterestedIn = "interestedIn" in body;
+    const hasHeight = "height" in body;
+    const hasEducation = "education" in body;
+    const hasJob = "job" in body;
+    const hasReligion = "religion" in body;
 
     const displayName = hasDisplayName ? sanitizeUserText(body.displayName ?? "", 80) : undefined;
     const bio = hasBio ? sanitizeUserText(body.bio ?? "", 500) : undefined;
     const city = hasCity ? sanitizeUserText(body.city ?? "", 120) : undefined;
     const interests = hasInterests ? sanitizeUserText(body.interests ?? "", 500) : undefined;
     const avatarUrl = hasAvatarUrl ? sanitizeUserText(body.avatarUrl ?? "", 300) : undefined;
+    const gender = hasGender ? (VALID_GENDER.includes(body.gender ?? "") ? body.gender : null) : undefined;
+    const interestedIn = hasInterestedIn ? (VALID_INTERESTED_IN.includes(body.interestedIn ?? "") ? body.interestedIn : null) : undefined;
+    const height = hasHeight ? (typeof body.height === "number" && body.height >= 100 && body.height <= 250 ? body.height : null) : undefined;
+    const education = hasEducation ? (VALID_EDUCATION.includes(body.education ?? "") ? body.education : null) : undefined;
+    const job = hasJob ? sanitizeUserText(body.job ?? "", 120) : undefined;
+    const religion = hasReligion ? (VALID_RELIGION.includes(body.religion ?? "") ? body.religion : null) : undefined;
 
     if (hasDisplayName) {
       if (!displayName || displayName.length < 2) {
@@ -78,6 +101,12 @@ export async function PATCH(request: Request) {
         bio,
         city,
         interests,
+        gender,
+        interestedIn,
+        height,
+        education,
+        job,
+        religion,
       },
       include: { user: { select: { email: true, displayName: true } } },
     });
@@ -91,6 +120,12 @@ export async function PATCH(request: Request) {
       bio: updated.bio,
       city: updated.city,
       interests: updated.interests,
+      gender: updated.gender,
+      interestedIn: updated.interestedIn,
+      height: updated.height,
+      education: updated.education,
+      job: updated.job,
+      religion: updated.religion,
     });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
